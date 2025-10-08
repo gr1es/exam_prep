@@ -8,7 +8,6 @@ int	main(int argc, char const *argv[])
 	char	*str;
 	char	letter;
 
-
 	if (argc != 2)
 		return (1);
 	else
