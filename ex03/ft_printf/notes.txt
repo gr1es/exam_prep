@@ -1,0 +1,14 @@
+
+1. variable number of function parameters
+	- function declaration:
+		int	ft_printf(const char *format, ...)
+	- #include <stdarg.h>
+	- va_list arg_list
+		- stores parameters
+	--> va_start(arg_list, format);
+		- format = last parameter before variable range of parameter
+	- every future call of va_arg(va_list X, variable type Y) delivers the next parameter
+		that is stored in the va_list variable X
+		- Y has to correspond to that parameter's variable type
+
+2. int_to_hex for print_hex

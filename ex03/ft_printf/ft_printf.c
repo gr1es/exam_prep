@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <limits.h>
 
 static int	g_bytes = 0;
 
@@ -26,6 +27,7 @@ static int	ft_putstr_fd(const char *str, int fd)
 			return (-1);
 		i++;
 	}
+	printf("\n\n\nputstr str: %s\n\n\n", str);
 	return (ft_strlen(str));
 }
 
@@ -44,10 +46,20 @@ static int	count_dir(const char *str)
 	return (dir_nbr);
 }
 
+static int count_digits(int nbr)
+{
+	int digits;
+	digits = 0;
+	while (nbr > 0)
+	{
+		nbr /= 10;
+		digits++;
+	}
+	return (digits);
+}
 static int	print_int(int nbr)
 {
 	char	c;
-	int		nbr_temp;
 	int		digits;
 	int		quot;
 	int		result;
@@ -62,13 +74,7 @@ static int	print_int(int nbr)
 			return (-1);
 		result++;
 	}
-	nbr_temp = nbr;
-	digits = 0;
-	while (nbr_temp > 0)
-	{
-		nbr_temp /= 10;
-		digits++;
-	}
+	digits = count_digits(nbr);
 	quot = 1;
 	result += digits;
 	while ((digits - 1) > 0)
@@ -86,6 +92,60 @@ static int	print_int(int nbr)
 	return (result);
 }
 
+static char *reverse_string(char *str)
+{
+	int i;
+	int end;
+	char temp;
+
+	i = 0;
+	end = ft_strlen(str) - 1;
+	while (i < end)
+	{
+		temp = str[i];
+		str[i] = str[end];
+		str[end] = temp;
+		i++;
+		end--;
+	}
+	printf("state of reverse: %s\n", str);
+	return (str);
+}
+
+static char *int_to_hex_str(unsigned int nbr)
+{
+	char str[9];
+	int i;
+	int mod;
+
+	i = 0;
+	while (nbr != 0)
+	{
+		mod = nbr % 16;
+		if (nbr < 10)
+			str[i] = mod + 48;
+		else
+			str[i] = mod + 87;
+		nbr /= 16;
+		i++;
+	}
+	str[i] = '\0';
+	printf("state of i2h: %s\n", str);
+	return (reverse_string(str));
+}
+
+static int print_hex(unsigned int nbr)
+{
+	char *str;
+
+	if (nbr == 0)
+		return (ft_putstr_fd("0", 1));
+	str = int_to_hex_str(nbr);
+	printf("state of print_hex: %s\n", str);
+	ft_putstr_fd((const char *)str, 1);
+	return (1);
+}
+
 static int	handle_dir(const char dir, va_list arg_list)
 {
 	int	g_bytes_temp;
@@ -94,11 +154,11 @@ static int	handle_dir(const char dir, va_list arg_list)
 	if (dir == '%')
 		g_bytes += write(1, "\%", 1);
 	else if (dir == 's')
-	{
 		g_bytes += ft_putstr_fd(va_arg(arg_list, char *), 1);
-	}
 	else if (dir == 'd' || dir == 'i')
 		g_bytes += print_int(va_arg(arg_list, int));
+	else if (dir == 'x')
+		g_bytes += print_hex(va_arg(arg_list, unsigned int));
 	if (g_bytes < g_bytes_temp)
 		return (-1);
 	return (0);
@@ -132,11 +192,9 @@ static int	print_format(const char *str, va_list arg_list)
 int	ft_printf(const char *format, ...)
 {
 	int		dir_nbr;
-	char	**array;
 	va_list	arg_list;
 
 	g_bytes = 0;
-	dir_nbr = 0;
 	dir_nbr = count_dir(format);
 	if (dir_nbr == 0)
 	{
@@ -158,16 +216,18 @@ int	ft_printf(const char *format, ...)
 
 int	main(void)
 {
-	char	*str;
 	int		result_ft;
 	int		result_org;
 
+	printf("TESTING: %x\n\n", 1234);
+	ft_printf("TESTING: %x\n\n", 1234);
+
 	printf("\n\norg:\n");
-	result_org = printf("%%s: %s\n%%d: %d\n\n", "Hello World!", 7384);
+	result_org = printf("%%s: %s\n%%d: %d\n", "Hello World!", 7384);
 	printf("org return: %i\n\n", result_org);
 	printf("__________\n\n\n");
 	printf("ft:\n");
-	result_ft = ft_printf("%%s: %s\n%%d: %d\n\n", "Hello World!", 7384);
+	result_ft = ft_printf("%%s: %s\n%%d: %d\n", "Hello World!", 7384);
 	printf("ft return: %i\n\n\n", result_ft);
 	return (0);
 }
