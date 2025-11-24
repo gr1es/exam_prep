@@ -10,5 +10,28 @@
 	- every future call of va_arg(va_list X, variable type Y) delivers the next parameter
 		that is stored in the va_list variable X
 		- Y has to correspond to that parameter's variable type
+	- va_end(arg_list).
 
 2. int_to_hex for print_hex
+	- str = malloc(9 * sizeof(char))
+	- while (nbr > 0)
+	- mod = nbr % 16
+	- if mod < 10 --> add mod + 48 to str
+	- if mod >= 10 --> mod + 48 + 39 = add mod + 87 to str
+	- in both cases: = str[i]
+	- nbr /= 16
+	- i++;
+	- top off with last i in str = null term
+	- reverse string, return it
+
+EDGE CASES:
+	- for %s:
+		- NULL
+		- empty string
+	- for %i
+		- 0
+		- INT_MIN
+		- INT_MAX
+	- for %x
+		- INT_MAX
+		- UINT_MAX

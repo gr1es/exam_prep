@@ -1,8 +1,9 @@
 
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <limits.h>
 
 static int	g_bytes = 0;
 
@@ -21,13 +22,14 @@ static int	ft_putstr_fd(const char *str, int fd)
 	int	i;
 
 	i = 0;
+	if (str == NULL)
+		return (ft_putstr_fd("(null)", 1));
 	while (str[i])
 	{
-		if (write(1, &str[i], fd) == -1)
+		if (write(fd, &str[i], 1) == -1)
 			return (-1);
 		i++;
 	}
-	printf("\n\n\nputstr str: %s\n\n\n", str);
 	return (ft_strlen(str));
 }
 
@@ -46,9 +48,10 @@ static int	count_dir(const char *str)
 	return (dir_nbr);
 }
 
-static int count_digits(int nbr)
+static int	count_digits(int nbr)
 {
-	int digits;
+	int	digits;
+
 	digits = 0;
 	while (nbr > 0)
 	{
@@ -67,6 +70,8 @@ static int	print_int(int nbr)
 	result = 0;
 	if (nbr == 0)
 		return (write(1, "0", 1));
+	if (nbr == INT_MIN)
+		return (ft_putstr_fd("-2147483648", 1));
 	if (nbr < 0)
 	{
 		nbr *= -1;
@@ -92,11 +97,11 @@ static int	print_int(int nbr)
 	return (result);
 }
 
-static char *reverse_string(char *str)
+static char	*reverse_string(char *str)
 {
-	int i;
-	int end;
-	char temp;
+	int		i;
+	int		end;
+	char	temp;
 
 	i = 0;
 	end = ft_strlen(str) - 1;
@@ -108,21 +113,23 @@ static char *reverse_string(char *str)
 		i++;
 		end--;
 	}
-	printf("state of reverse: %s\n", str);
 	return (str);
 }
 
-static char *int_to_hex_str(unsigned int nbr)
+static char	*int_to_hex_str(unsigned int nbr)
 {
-	char str[9];
-	int i;
-	int mod;
+	char	*str;
+	int		i;
+	int		mod;
 
 	i = 0;
+	str = malloc(9 * sizeof(char));
+	if (!str)
+		return (NULL);
 	while (nbr != 0)
 	{
 		mod = nbr % 16;
-		if (nbr < 10)
+		if (mod < 10)
 			str[i] = mod + 48;
 		else
 			str[i] = mod + 87;
@@ -130,20 +137,20 @@ static char *int_to_hex_str(unsigned int nbr)
 		i++;
 	}
 	str[i] = '\0';
-	printf("state of i2h: %s\n", str);
 	return (reverse_string(str));
 }
 
-static int print_hex(unsigned int nbr)
+static int	print_hex(unsigned int nbr)
 {
-	char *str;
+	char	*str;
+	int		result;
 
 	if (nbr == 0)
 		return (ft_putstr_fd("0", 1));
 	str = int_to_hex_str(nbr);
-	printf("state of print_hex: %s\n", str);
-	ft_putstr_fd((const char *)str, 1);
-	return (1);
+	result = ft_putstr_fd(str, 1);
+	free(str);
+	return (result);
 }
 
 static int	handle_dir(const char dir, va_list arg_list)
@@ -216,18 +223,95 @@ int	ft_printf(const char *format, ...)
 
 int	main(void)
 {
-	int		result_ft;
-	int		result_org;
-
-	printf("TESTING: %x\n\n", 1234);
-	ft_printf("TESTING: %x\n\n", 1234);
-
-	printf("\n\norg:\n");
-	result_org = printf("%%s: %s\n%%d: %d\n", "Hello World!", 7384);
-	printf("org return: %i\n\n", result_org);
-	printf("__________\n\n\n");
-	printf("ft:\n");
-	result_ft = ft_printf("%%s: %s\n%%d: %d\n", "Hello World!", 7384);
-	printf("ft return: %i\n\n\n", result_ft);
+	ft_printf("Magic %s is %d\n", "number", 42);
 	return (0);
 }
+
+// void	test_str(char *s)
+// {
+// 	int	r_org;
+// 	int	r_ft;
+
+// 	printf("--------------------------------------\n");
+// 	printf("TEST: %%s with [%s]\n", s);
+// 	printf("ORG: ");
+// 	fflush(stdout);
+// 	r_org = printf("%s", s);
+// 	printf("\n");
+// 	printf(" FT: ");
+// 	fflush(stdout);
+// 	r_ft = ft_printf("%s", s);
+// 	printf("\n");
+// 	printf("RET: ORG=%d | FT=%d\n", r_org, r_ft);
+// 	if (r_org == r_ft)
+// 		printf("RESULT: OK\n");
+// 	else
+// 		printf("RESULT: FAIL\n");
+// 	printf("\n");
+// }
+
+// void	test_int(int d)
+// {
+// 	int	r_org;
+// 	int	r_ft;
+
+// 	printf("--------------------------------------\n");
+// 	printf("TEST: %%d with [%d]\n", d);
+// 	printf("ORG: ");
+// 	fflush(stdout);
+// 	r_org = printf("%d", d);
+// 	printf("\n");
+// 	printf(" FT: ");
+// 	fflush(stdout);
+// 	r_ft = ft_printf("%d", d);
+// 	printf("\n");
+// 	printf("RET: ORG=%d | FT=%d\n", r_org, r_ft);
+// 	if (r_org == r_ft)
+// 		printf("RESULT: OK\n");
+// 	else
+// 		printf("RESULT: FAIL\n");
+// 	printf("\n");
+// }
+
+// void	test_hex(unsigned int x)
+// {
+// 	int	r_org;
+// 	int	r_ft;
+
+// 	printf("--------------------------------------\n");
+// 	printf("TEST: %%x with [%u]\n", x);
+// 	printf("ORG: ");
+// 	fflush(stdout);
+// 	r_org = printf("%x", x);
+// 	printf("\n");
+// 	printf(" FT: ");
+// 	fflush(stdout);
+// 	r_ft = ft_printf("%x", x);
+// 	printf("\n");
+// 	printf("RET: ORG=%d | FT=%d\n", r_org, r_ft);
+// 	if (r_org == r_ft)
+// 		printf("RESULT: OK\n");
+// 	else
+// 		printf("RESULT: FAIL\n");
+// 	printf("\n");
+// }
+
+// int	main(void)
+// {
+// 	// 1. STRINGS
+// 	test_str("Hello");
+// 	test_str("");
+// 	test_str(NULL);
+// 	// 2. INTEGERS
+// 	test_int(42);
+// 	test_int(-42);
+// 	test_int(0);
+// 	test_int(INT_MAX);
+// 	test_int(INT_MIN);
+// 	// 3. HEX
+// 	test_hex(42);
+// 	test_hex(0);
+// 	test_hex(INT_MAX);
+// 	test_hex(UINT_MAX);
+// 	return (0);
+// }
