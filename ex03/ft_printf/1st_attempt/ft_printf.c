@@ -1,11 +1,9 @@
 
-// LEFT ON THE CLOCK: 2 HOURS
 
-#include <limits.h>
-#include <stdarg.h>
-#include <stdio.h> // remove later?
-#include <stdlib.h>
-#include <unistd.h>
+#include <limits.h> // for INT_MIN/INT_MAX
+#include <stdarg.h> // for va_ stuff
+#include <stdlib.h> // for malloc/free
+#include <unistd.h> // for write
 
 static int	g_bytes = 0;
 
@@ -45,7 +43,7 @@ static int	check_input(const char *format)
 	if (!format)
 		return (-1);
 	if (format[0] == '\0')
-		return (-1);
+		return (0);
 	i = 0;
 	dir = 0;
 	while (format[i])
@@ -59,17 +57,56 @@ static int	check_input(const char *format)
 	return (1);
 }
 
-// forgot to finish this
-static int	print_int(int nbr)
+static char	*reverse_str(char *str)
 {
-	if (nbr == 0)
-		return (ft_putstr_fd("0", 1));
-	if (nbr == INT_MAX)
-		return (ft_putstr_fd("2147483647", 1));
-	if (nbr == INT_MIN)
-		return (ft_putstr_fd("-2147483648", 1));
+	int		start;
+	int		end;
+	char	temp;
+
+	start = 0;
+	end = ft_strlen(str) - 1;
+	while (start < end)
+	{
+		temp = str[end];
+		str[end] = str[start];
+		str[start] = temp;
+		end--;
+		start++;
+	}
+	return (str);
 }
-// started this too early
+
+static int	print_int(int n)
+{
+	int		i;
+	int		nbr;
+	char	str[12];
+
+	if (n == 0)
+		return (ft_putstr_fd("0", 1));
+	if (n == INT_MAX)
+		return (ft_putstr_fd("2147483647", 1));
+	if (n == INT_MIN)
+		return (ft_putstr_fd("-2147483648", 1));
+	i = 0;
+	nbr = n;
+	if (nbr < 0)
+		nbr *= -1;
+	while (nbr > 0)
+	{
+		str[i] = (nbr % 10) + 48;
+		nbr /= 10;
+		i++;
+	}
+	if (n < 0)
+	{
+		str[i] = '-';
+		i++;
+	}
+	str[i] = '\0';
+	return (ft_putstr_fd(reverse_str(str), 1));
+}
+
 static char	*int_to_hex_str(unsigned int nbr)
 {
 	char			*str;
@@ -82,9 +119,16 @@ static char	*int_to_hex_str(unsigned int nbr)
 	i = 0;
 	while (nbr > 0)
 	{
-		nbr / 16;
+		mod = nbr % 16;
+		if (mod < 10)
+			str[i] = mod + 48;
+		else
+			str[i] = mod + 87;
+		nbr /= 16;
 		i++;
 	}
+	str[i] = '\0';
+	return (reverse_str(str));
 }
 
 static int	print_hex(unsigned int nbr)
@@ -95,7 +139,9 @@ static int	print_hex(unsigned int nbr)
 	if (nbr == 0)
 		return (ft_putstr_fd("0", 1));
 	str = int_to_hex_str(nbr);
-	result = ft_putstr(str, 1);
+	if (!str)
+		return (-1);
+	result = ft_putstr_fd(str, 1);
 	free(str);
 	return (result);
 }
@@ -127,40 +173,37 @@ static int	handle_dir(const char *format, va_list arg_list)
 	{
 		if (format[i] != '%')
 		{
-			if (write(1, &format[i], 1) == -1)
-				return (-1);
+			{
+				g_bytes++;
+				if (write(1, &format[i], 1) == -1)
+					return (-1);
+			}
 		}
 		else
 		{
 			i++;
-			if (print_dir(format[i], arg_list) == -1)
+			if (format[i] == '\0' || print_dir(format[i], arg_list) == -1)
 				return (-1);
 		}
 		i++;
 	}
+	return (1);
 }
 
 int	ft_printf(const char *format, ...)
 {
 	va_list	arg_list;
+	int		input;
 
-	if (check_input(format) == 0)
+	g_bytes = 0;
+	input = check_input(format);
+	if (input == 0)
 		return (ft_putstr_fd(format, 1));
+	if (input == -1)
+		return (-1);
 	va_start(arg_list, format);
 	if (handle_dir(format, arg_list) == -1)
 		g_bytes = -1;
 	va_end(arg_list);
 	return (g_bytes);
-}
-
-/////////////////////////////////////////
-
-int	main(void)
-{
-	printf("org:\n");
-	printf("%d\n", INT_MIN);
-	printf("\n");
-	printf("ft:\n");
-	ft_printf("%d\n", INT_MIN);
-	printf("\n");
 }

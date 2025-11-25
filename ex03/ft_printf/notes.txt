@@ -14,6 +14,7 @@
 
 2. int_to_hex for print_hex
 	- str = malloc(9 * sizeof(char))
+	- handle nbr == 0 separately
 	- while (nbr > 0)
 	- mod = nbr % 16
 	- if mod < 10 --> add mod + 48 to str
@@ -23,6 +24,24 @@
 	- i++;
 	- top off with last i in str = null term
 	- reverse string, return it
+
+3. general stuff:
+	- reset g_bytes to 0 at the start of ft_printf!
+	- empty string (printf("");) just prints nothing and returns 0; NOT -1!
+	- int to str: str needs buffer of 12 bytes!
+		--> INT_MAX/INT_MIN has 11 digits (including null term)
+	- when differentiating between non-% and %dir:
+		- when skipping directing %, return -1 if following char is null terminator
+		--> no lone %, org printf returns -1 if dir is missing
+	- format == NULL and %s == NULL are differnt scenarios
+		- format == NULL returns -1 (Error)
+		- string == NULL prints (null) and returns 6
+	- str[12] vs malloc
+		- use malloc if string with designated memory should be returned
+		- str[12] is fine if usage of str is done before return()
+	- remember malloc protection!
+	- hardcode 0 for hex conversion! 0 in dec --> 0 in hex
+	- handle INT_MIN (-2147483648) for int_to_str!
 
 EDGE CASES:
 	- for %s:
@@ -35,3 +54,9 @@ EDGE CASES:
 	- for %x
 		- INT_MAX
 		- UINT_MAX
+
+HEADERS
+<stdarg.h> (for va_start, etc.)
+<unistd.h> (for write)
+<stdlib.h> (for malloc, free)
+<limits.h> (for INT_MIN, INT_MAX constants)
