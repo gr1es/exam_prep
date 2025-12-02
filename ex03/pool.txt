@@ -1,0 +1,15 @@
+
+
+Level 1:
+
+	filter (Text processing)
+
+	broken_gnl (Debugging a broken get_next_line)
+
+Level 2:
+
+	ft_nqueens
+
+	ft_powerset
+
+	ft_permutations.

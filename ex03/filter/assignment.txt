@@ -1,0 +1,40 @@
+
+Assignment Name: filter
+
+Expected Files: filter.c
+Allowed Functions: read, write, malloc, free, exit
+
+Description:
+
+    Write a program that takes a string S as an argument.
+
+    The program must read continuously from the standard input (stdin) and print it to the standard output (stdout).
+
+    While printing, it must replace every occurrence of the string S found in the input with the character * repeated the same number of times as the length of S.
+
+    Example: If S is "cat" (length 3), every "cat" in the input becomes ***.
+
+    Constraints:
+
+        Your program must handle varying BUFFER_SIZE (defined at compilation, e.g., -D BUFFER_SIZE=42).
+
+        You must handle the case where the pattern S is split between two reads (e.g., if the buffer ends with "ca" and the next buffer starts with "t").
+
+        No memory leaks.
+
+        If the number of arguments is not 1 (excluding the program name), print nothing and exit.
+
+
+Command for functionality comparison
+
+echo "Hello cat" | sed 's/cat/***/g'
+
+Breaking down the syntax
+
+    s : Substitute.
+
+    /cat/ : The pattern to find (the string passed as argument to your program).
+
+    /***/ : The replacement (you must manually type the same number of * as the length of "cat").
+
+    g : Global (replace all occurrences, not just the first one on each line).

@@ -1,0 +1,49 @@
+
+I
+helper functions:
+
+1. string length calculator (ft_strlen)
+- return 0 if input is NULL
+
+2. string joiner with free (ft_strjoin_free)
+- returns new joined string but frees one prior constituent
+
+3. newline finder (ft_strchr)
+- returns index where needle was found in stack
+
+
+II
+variable setup:
+
+- static string (stash): holds data from buffer that has not been printed yet
+- buffer: temporary array to hold bytes from read with BUFFER_SIZE + 1
+- byte counter: to store returned value of read
+- line: what is to be printed
+
+III
+reading loop:
+
+- call read() with buffer as parameter and byte counter as target
+- if byte counter == -1: return NULL for Error
+- if counter == 0: done reading, break loop
+- null terminate the buffer
+- merge buffer and stash
+- does stash contain newline? break loop
+
+IV
+extract the line:
+
+- find index of first newline
+- malloc space for chars up to newline + 1 (for newline) + 1 (for null term)
+- copy from start of stash into new line string
+- EOF: if file ends without newline, loop finished but no newline in stash
+	--> copy remaining chars to line and terminate
+
+V
+clean the stash:
+
+- allocate new_stash for len(stash) - len(line)
+- copy everything after newline to line
+- free old stash
+- point static stash to new_stash
+- edge case: if nothing left after line, free stash and set to NULL
