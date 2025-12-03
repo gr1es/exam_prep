@@ -11,39 +11,58 @@ helper functions:
 3. newline finder (ft_strchr)
 - returns index where needle was found in stack
 
+4. freeing helper
+- accepts 2-3 strings, frees them if not == NULL
 
 II
 variable setup:
 
-- static string (stash): holds data from buffer that has not been printed yet
-- buffer: temporary array to hold bytes from read with BUFFER_SIZE + 1
-- byte counter: to store returned value of read
-- line: what is to be printed
+- static char *stash: holds data from buffer that has not been printed yet
+- char *buffer: temporary array to hold bytes from read with BUFFER_SIZE + 1
+- ssize_t bytes: to store returned value of read
+- char *line: what is to be returned
+- char * temp: placeholder
+- int newline_i: index of newline
+- int i: for incrementing through line
 
 III
-reading loop:
-
-- call read() with buffer as parameter and byte counter as target
-- if byte counter == -1: return NULL for Error
-- if counter == 0: done reading, break loop
-- null terminate the buffer
-- merge buffer and stash
-- does stash contain newline? break loop
+pre-work
+- malloc buffer; safeguard should free stash and set it to NULL
+- newline_i = find_newline(stash); (will be -1 on first run)
 
 IV
-extract the line:
-
-- find index of first newline
-- malloc space for chars up to newline + 1 (for newline) + 1 (for null term)
-- copy from start of stash into new line string
-- EOF: if file ends without newline, loop finished but no newline in stash
-	--> copy remaining chars to line and terminate
+loop
+- condition: while newline_i == -1
+- call read() with buffer as parameter and byte counter as target
+- if byte counter == -1: free stash and set to NULL,return NULL for Error
+- if counter == 0: done reading, break loop
+- null terminate the buffer
+MERGING
+- if stash still == NULL
+	- ft_strjoin_free into stash with only buffer, usual safeguard
+- else:
+	- ft_strjoin_free stash and buffer into line (frees stash), usual safeguard
+	- set stash to temp
+- recall find_newline on newline_i
 
 V
-clean the stash:
+extract the line
+- if newline_i == -1 --> means that read reached EOF, loop broke
+	- free buffer
+	- temp = stash
+	- stash = NULL
+	- return (temp)
+- malloc line for newline_i + 1 + 1 (for newline and null term) + safeguard
+- while i <= newline_i (smaller OR EQUAL!)
+	- line[i] == stash[i]; i++;
+- top off with null term on i
+- set temp = NULL
+- if there is still something in the stash after the newline (stash[newline_i + i] != '\0')
+	- strjoin_free stash + newline_i + 1 into temp + safeguard
 
-- allocate new_stash for len(stash) - len(line)
-- copy everything after newline to line
-- free old stash
-- point static stash to new_stash
-- edge case: if nothing left after line, free stash and set to NULL
+VI
+clean up
+- free(stash);
+- stash = temp (if there was something after newline, it is now stored there for future calls; otherwise NULL)
+- free(buffer)
+- return (line)
