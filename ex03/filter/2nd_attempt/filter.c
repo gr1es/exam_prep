@@ -6,7 +6,7 @@
 # define BUFFER_SIZE 42
 #endif
 
-int	main(int argc, char *argv[])
+int	main(int argc, const char *argv[])
 {
 	char	*input;
 	char	*censor;
@@ -22,7 +22,6 @@ int	main(int argc, char *argv[])
 		perror("Error");
 		return (1);
 	}
-	i = 0;
 	chars_matched = 0;
 	censor = (char *)argv[1]; // what is to be replaced by asterisks
 	while ((bytes = read(0, input, BUFFER_SIZE)) > 0)
