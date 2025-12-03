@@ -27,7 +27,7 @@ Description:
 
 Command for functionality comparison
 
-echo "Hello cat" | sed 's/cat/***/g'
+sed 's/cat/***/g'
 
 Breaking down the syntax
 
