@@ -12,4 +12,4 @@ Level 2:
 
 	ft_powerset
 
-	ft_permutations.
+	ft_permutations

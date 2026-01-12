@@ -1,0 +1,33 @@
+
+to do before loop:
+- ifndef BUFFER_SIZE define BUFFER_SIZE 42 endif
+- malloc line: BUFFER_SIZE * size of char
+- argc != 2: return (0), end logic prematurely since no to_censor given
+- char *to_censor = (char*)argv[1];
+
+main loop logic:
+- condition: (read return zu bytes) > 0
+	- bytes == 0: no more input, ft may end normally
+	- bytes == -1: error, free line, return 1
+	- bytes == anything else: begin processing
+- set i to 0
+- iterate through line via while (i < bytes)
+	- see if the current char matches the first letter of to_censor; if yes:
+		- chars_matched increases
+		- if the whole to_censor word was found (to_censor[chars_matched] == '\0):
+			- decrement chars_matched while writing "*"
+		- else (not the whole to_censor word was found):
+			- if chars_matched was already incremented
+				- write to_censor up to chars_matched bytes
+				- set chars_matched to 0
+				- decrement i so that the loop looks at the current char again (start of t_censor word?)
+			- else
+				- just write the current char
+	- increment i
+after loop:
+- bytes == -1 means read failed
+	- free input and return -1
+- chars_matched is greater than 0 means that there is still input dangling
+	- write to_censor up to chars_matched bytes
+- free input
+- return 0
