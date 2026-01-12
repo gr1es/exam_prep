@@ -1,5 +1,9 @@
 
 I
+#include <unistd.h> for read
+#include <stdlib.h> for malloc and free
+
+II
 helper functions:
 
 1. string length calculator (ft_strlen)
@@ -8,13 +12,13 @@ helper functions:
 2. string joiner with free (ft_strjoin_free)
 - returns new joined string but frees one prior constituent
 
-3. newline finder (ft_strchr)
+3. newline finder
 - returns index where needle was found in stack
 
 4. freeing helper
-- accepts 2-3 strings, frees them if not == NULL
+- accepts 2 strings, frees them if not == NULL
 
-II
+III
 variable setup:
 
 - static char *stash: holds data from buffer that has not been printed yet
@@ -25,12 +29,12 @@ variable setup:
 - int newline_i: index of newline
 - int i: for incrementing through line
 
-III
+IV
 pre-work
 - malloc buffer; safeguard should free stash and set it to NULL
 - newline_i = find_newline(stash); (will be -1 on first run)
 
-IV
+V
 loop
 - condition: while newline_i == -1
 - call read() with buffer as parameter and byte counter as target
@@ -41,11 +45,11 @@ MERGING
 - if stash still == NULL
 	- ft_strjoin_free into stash with only buffer, usual safeguard
 - else:
-	- ft_strjoin_free stash and buffer into line (frees stash), usual safeguard
+	- ft_strjoin_free stash and buffer into temp (frees stash), usual safeguard
 	- set stash to temp
 - recall find_newline on newline_i
 
-V
+VI
 extract the line
 - if newline_i == -1 --> means that read reached EOF, loop broke
 	- free buffer
@@ -60,7 +64,7 @@ extract the line
 - if there is still something in the stash after the newline (stash[newline_i + i] != '\0')
 	- strjoin_free stash + newline_i + 1 into temp + safeguard
 
-VI
+VII
 clean up
 - free(stash);
 - stash = temp (if there was something after newline, it is now stored there for future calls; otherwise NULL)
