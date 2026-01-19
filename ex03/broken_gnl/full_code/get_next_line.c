@@ -172,7 +172,7 @@ char	*get_next_line(int fd)
 		}
 	}
 	free(stash);
-	stash = NULL;
+	stash = temp;
 	free(buffer);
 	return (line);
 }
