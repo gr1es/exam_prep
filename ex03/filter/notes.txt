@@ -31,3 +31,8 @@ after loop:
 	- write to_censor up to chars_matched bytes
 - free input
 - return 0
+
+
+REMINDERS
+- set i to 0 at the beginning of loop!
+- while (i < bytes), not while (line[i])!
