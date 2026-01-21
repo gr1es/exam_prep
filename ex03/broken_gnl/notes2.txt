@@ -1,33 +1,36 @@
 # GET_NEXT_LINE BLUEPRINT
 
-I. INCLUDES
-- <unistd.h> (read)
-- <stdlib.h> (malloc, free)
-#ifndef BUFFER_SIZE 42
+I. INCLUDES & DEFINES
+- <unistd.h> (for read)
+- <stdlib.h> (for malloc, free)
+- #ifndef BUFFER_SIZE
+  # define BUFFER_SIZE 42
+  #endif
 
 II. HELPER FUNCTIONS
-1. ft_strlen
+1. ft_strlen(char *str)
    - Return 0 if input is NULL.
 2. ft_strjoin_free(char *s1_to_free, char *s2_to_keep)
    - Mallocs size: len(s1) + len(s2) + 1.
-   - If s1 is NULL: Copies only s2.
+   - If s1 is NULL: Copies only s2 (Acts like strdup).
    - If s1 exists: Copies s1, then s2, then frees s1.
-   - NEVER frees s2.
-3. find_newline
-   - Returns index of '\n' or -1 if not found.
-4. free_all
+   - NEVER frees s2 (because s2 is usually the buffer or an offset).
+3. find_newline(char *str)
+   - Returns index of '\n' or -1 if not found/str is NULL.
+4. free_all(char *s1, char *s2)
    - Checks if pointers are not NULL before freeing.
 
 III. VARIABLES
 - static char *stash; (Persists between calls)
 - char *buffer;       (malloc size: BUFFER_SIZE + 1)
-- ssize_t bytes;      (Stores read() return)
 - char *line;         (The returned string)
 - char *temp;         (For swapping pointers)
+- ssize_t bytes;      (Stores read() return)
 - int newline_i;      (Index of newline)
+- int i;              (Iterator for copying)
 
 IV. PRE-WORK
-- Malloc buffer.
+- Malloc buffer (size BUFFER_SIZE + 1).
   - Safeguard: if fail -> free(stash), stash=NULL, return NULL.
 - newline_i = find_newline(stash).
 
@@ -42,26 +45,37 @@ V. READING LOOP
   5. Merge to Stash:
      - If (!stash): stash = ft_strjoin_free(NULL, buffer).
      - Else:        stash = ft_strjoin_free(stash, buffer).
-     - Safeguard both calls!
+     - Safeguard both: if (!stash) -> free(buffer), return NULL.
   6. newline_i = find_newline(stash).
 
 VI. EXTRACT THE LINE
-- EOF Handling (if newline_i == -1):
-  - If stash has data: return stash (cleanup buffer, set stash=NULL).
-  - If stash empty: cleanup all, return NULL.
-- Malloc line (size: newline_i + 2).
-  - Safeguard.
-- Copy loop: from 0 to newline_i (inclusive) into line.
-- Null terminate line.
+- Case A: EOF Handling (if newline_i == -1):
+  - If stash has data:
+      temp = stash;
+      stash = NULL;
+      free(buffer);
+      return temp.
+  - If stash empty:
+      free_all(stash, buffer);
+      stash = NULL;
+      return NULL.
+
+- Case B: Normal Line Extraction:
+  - Malloc line (size: newline_i + 2).
+    - Safeguard: free_all(stash, buffer), stash=NULL, return NULL.
+  - i = 0.
+  - Copy loop: while (i <= newline_i): line[i] = stash[i].
+  - Null terminate: line[i] = '\0'.
+
 - Save Remainder (temp):
   - temp = NULL.
   - If (stash[newline_i + 1] != '\0'):
     - temp = ft_strjoin_free(NULL, stash + newline_i + 1).
-    - Note: Pass NULL as 1st arg to avoid invalid free.
-    - Safeguard.
+    - Note: Pass NULL as 1st arg to treat it like strdup (don't free offset).
+    - Safeguard: if (!temp) -> free_all(stash, buffer), stash=NULL, return NULL.
 
 VII. CLEANUP
-- free(stash).
-- stash = temp (updates static var to the remainder).
-- free(buffer).
+- free(stash).       (Destroy the old stash)
+- stash = temp;      (Update static var to the new remainder)
+- free(buffer).      (Always free the read buffer)
 - return (line).
