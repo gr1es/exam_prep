@@ -166,6 +166,7 @@ int	main(void)
 	char	*line;
 	int		fd;
 	int		count;
+	int i = 0;
 
 	// 1. Open a file to read
 	// Make sure you create a file named "test.txt" with some text in it!
@@ -178,7 +179,7 @@ int	main(void)
 	count = 1;
 	printf("--- STARTING READ (BUFFER_SIZE = %d) ---\n", BUFFER_SIZE);
 	// 2. Loop until get_next_line returns NULL
-	while (1)
+	while (i < 3)
 	{
 		line = get_next_line(fd);
 		if (line == NULL)
@@ -188,6 +189,7 @@ int	main(void)
 		// IMPORTANT: You must free the line returned by GNL
 		free(line);
 		count++;
+		i++;
 	}
 	printf("\n--- END OF FILE ---\n");
 	close(fd);

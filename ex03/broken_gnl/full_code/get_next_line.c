@@ -89,7 +89,7 @@ static void	free_all(char *stash, char *buffer)
 char	*get_next_line(int fd)
 {
 	int			i;
-	static char	*stash = NULL;
+	static char	*stash;
 	char		*buffer;
 	ssize_t		bytes;
 	char		*temp;
