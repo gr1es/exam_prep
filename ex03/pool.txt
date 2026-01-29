@@ -13,3 +13,5 @@ Level 2:
 	ft_powerset
 
 	ft_permutations
+
+	rip

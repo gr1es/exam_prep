@@ -1,0 +1,86 @@
+ASSIGNMENT GUIDE: RIP
+
+0. OBJECTIVE
+The goal is to use a Depth-First Search (DFS) algorithm (recursion) to explore different ways of removing parentheses until you find all valid combinations that meet the "minimum removal" criteria.
+"Removing" essentially means replacing the character with a space.
+
+---
+
+1. INCLUDES & ALLOWED FUNCTIONS
+Headers: unistd.h (for write), stdio.h (for printf or puts).
+Allowed functions: puts, write.
+
+---
+
+2. Step 0: ft_strlen
+...
+
+---
+
+3. STEP 1: THE VALIDATOR
+You need a reliable way to check if a specific string is currently balanced.
+Function Name: validator
+Parameters: char *str
+Return: 1 if valid, 0 if invalid
+Logic:
+* Initialize a counter to 0.
+* Iterate through the string.
+* If you see '(', increment the counter.
+* If you see ')', decrement the counter.
+* Critical Check: If the counter ever drops below 0 inside the loop, return 0 immediately. This detects cases like "())" early.
+* After the loop finishes, check the counter. If it is exactly 0, return 1. Otherwise, return 0.
+
+
+
+---
+
+4. STEP 2: CALCULATING TARGETS
+Before recursing, calculate exactly how many parentheses must be removed.
+Function Name: get_limits
+Parameters: char *str, int *left_rem, int *right_rem
+Logic:
+* Walk through the string tracking the balance (similar to the validator).
+* Right Removals: If the balance drops below 0 (meaning too many closing brackets), increment your *right_rem counter and reset the balance to 0.
+* Left Removals: After the loop finishes, whatever positive number is left in the balance represents the excess opening brackets that were never closed. Assign this value to *left_rem.
+
+---
+
+5. STEP 3: THE RECURSIVE SOLVER (THE ENGINE)
+This function tries to remove parentheses one by one, backtracks if it hits a wall, and prints the string if it succeeds.
+Function Name: solve
+Parameters: char *str, int left_rem, int right_rem, int index
+Logic:
+* Base Case: Check if left_rem and right_rem are both 0.
+If true, run the validator on str. If it passes, print str and return.
+* Recursive Loop: Iterate from the current 'index' to the end of the string.
+
+Path A (Remove Left):
+* Check if current char is '(' AND left_rem > 0.
+* Replace the char with a space ' '.
+* Recurse: call solve with left_rem minus 1, and index plus 1.
+* Backtrack: Restore the char to '('.
+
+Path B (Remove Right):
+* Check if current char is ')' AND right_rem > 0.
+* Replace the char with a space ' '.
+* Recurse: call solve with right_rem minus 1, and index plus 1.
+* Backtrack: Restore the char to ')'.
+
+---
+
+6. STEP 4: MAIN
+Function Name: main
+Logic:
+* Check argument count.
+* (Optional) Run a strip_input helper to clean edge cases (leading closing brackets, trailing opening brackets).
+* Call get_limits to populate your left_rem and right_rem variables.
+* Call solve starting at index 0.
+
+---
+
+7. TRAPS AND HINTS
+* The Infinite Loop Trap: In your recursive call, you must pass (i + 1) or (index + 1). Do not pass 'i' (infinite loop) or 'i + i' (skips logic).
+* The Backtracking Rule: Never forget to restore the character (put the '(' or ')' back) after the recursive call returns. If you fail to do this, the string remains modified for the next iteration of the loop, breaking the logic.
+* Segfaults: If you use a helper loop to strip input, ensure it handles empty strings safely. Always check that your index is >= 0 if iterating backwards.
+* Duplicates: The assignment requires printing all solutions. Because the logic replaces characters with spaces at specific indices, the string " ()" is different from "( )". You do not need complex logic to filter duplicates if you use this space-replacement method.
+* Norm Compliance: No ternary operators. Keep functions short.
