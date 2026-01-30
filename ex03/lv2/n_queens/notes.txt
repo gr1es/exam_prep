@@ -1,0 +1,79 @@
+ASSIGNMENT GUIDE: N_QUEENS
+
+1. OBJECTIVE
+The goal is to place N queens on an NxN chessboard so that no two queens attack each other.
+You must print the coordinates of the queens for every valid solution found.
+The approach uses recursive backtracking.
+
+2. INCLUDES & ALLOWED FUNCTIONS
+Headers: stdio.h, stdlib.h, unistd.h.
+Allowed functions : atoi, fprintf, write, calloc, malloc, free, realloc, stdout, stderr
+
+---
+
+3. STEP 1: DATA STRUCTURE & SETUP
+You need a way to represent the board. A 1D integer array is efficient and sufficient.
+Function Name: create_board
+Parameters: int n
+Return: int * (pointer to the array)
+Logic:
+* Allocate memory for 'n' integers.
+* Each index of the array represents a COLUMN.
+* The value at that index represents the ROW where the queen is placed.
+* Example: board[2] = 5 means there is a queen at Column 2, Row 5.
+
+---
+
+4. STEP 2: THE SAFETY CHECK
+Before placing a queen, you must verify she cannot be attacked by any queen placed in previous columns.
+Function Name: check_poss
+Parameters: int *board, int current_col, int target_row
+Return: 1 if safe, 0 if unsafe
+Logic:
+* Iterate through all previous columns (from i = 0 up to current_col - 1).
+* Horizontal Check: You don't need to check this because the recursion moves column by column.
+* Row Check: If board[i] == target_row, a queen is already in that row. Return 0.
+* Diagonal Check:
+* Calculate horizontal distance: current_col - i
+* Calculate vertical distance: absolute value of (board[i] - target_row)
+* If horizontal distance equals vertical distance, they are on the same diagonal. Return 0.
+* If the loop finishes without conflicts, return 1.
+
+---
+
+5. STEP 3: THE RECURSIVE SOLVER
+This function attempts to place a queen in the current column and then moves to the next.
+Function Name: solve
+Parameters: int n, int *board, int current_col
+Logic:
+* Base Case: If current_col equals n, you have successfully placed queens in all columns.
+* Print the solution with fprintf and stdout. Iterate through the board array and print the row values separated by spaces.
+* Print a newline at the end.
+* Return (or continue to find more solutions depending on requirements).
+
+* Recursive Step: Iterate through every possible row (from 0 to n-1).
+* Call check_poss for the current column and the current row loop index.
+* If valid:
+* Set board[current_col] = row.
+* Recurse: call solve for current_col + 1.
+* (Note: Explicit backtracking/resetting to 0 is not strictly necessary here because the value will simply be overwritten in the next iteration or the stack frame will pop).
+
+---
+
+6. STEP 4: MAIN
+Function Name: main
+Logic:
+* Check argument count.
+* Parse N using atoi (or strict equivalent).
+* Handle constraints: If N is less than 4 and not 1, there are no solutions. Print a newline (optional, depends on subject) and exit.
+* Allocate the board.
+* Call solve starting at column 0.
+* Free the board memory.
+
+---
+
+7. TRAPS AND HINTS
+* Diagonal Math: The absolute value is critical. board[i] might be larger or smaller than target_row. Ensure your vertical distance calculation is always positive.
+* Forbidden Functions: This specific implementation uses fprintf and atoi. In strict 42 exams, these are often forbidden. You usually need to implement a simple ft_putnbr and ft_atoi helper using 'write'.
+* Optimization: Checking up to 'current_col - 1' is crucial. Checking the whole board is unnecessary and will fail because future columns are not set yet.
+* Output Formatting: Pay close attention to trailing spaces. The loop in the provided code prints a space only if it is NOT the last number. This is a common strict requirement.
