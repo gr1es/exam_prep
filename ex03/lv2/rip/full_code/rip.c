@@ -22,7 +22,7 @@ static char	*strip_input(char *input)
 		i++;
 	}
 	i = ft_strlen(input) - 1;
-	while (i >= 0 && input[i] == '(' && input[i] != ' ')
+	while (i >= 0 && input[i] == '(')
 	{
 		input[i] = ' ';
 		i--;
@@ -88,6 +88,7 @@ static void	solve(char *str, int left_rem, int right_rem, int i)
 	{
 		if (validator(str) == 1)
 			puts(str);
+		// regardless of validity: nothing to be done
 		return ;
 	}
 	while (str[i])

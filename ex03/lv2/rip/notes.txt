@@ -12,8 +12,9 @@ Allowed functions: puts, write.
 
 ---
 
-2. Step 0: ft_strlen
-...
+2. Step 0: ft_strlen + strip_input
+- ft_strlen: ...
+- strip_input = returns str without leading ) and trailing (
 
 ---
 
