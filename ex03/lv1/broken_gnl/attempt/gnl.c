@@ -1,6 +1,6 @@
 
-#include <unistd.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #ifndef BUFFER_SIZE
 # define BUFFER_SIZE 42
@@ -76,7 +76,7 @@ static int	find_newline(char *str)
 	return (-1);
 }
 
-static void	free_all(char *s1, char *s2)
+static void	freer(char *s1, char *s2)
 {
 	if (s1)
 		free(s1);
@@ -87,42 +87,41 @@ static void	free_all(char *s1, char *s2)
 char	*get_next_line(int fd)
 {
 	static char	*stash = NULL;
-	char		*buffer;
-	ssize_t		bytes;
-	char		*line;
 	char		*temp;
-	int			newline_i;
+	char		*line;
+	char		*buffer;
 	int			i;
+	int			newline_i;
+	ssize_t		bytes;
 
-	if (fd < 0)
-		return (NULL);
-	buffer = malloc((BUFFER_SIZE + 1) * sizeof(char));
+	i = 0;
+	newline_i = find_newline(stash);
+	buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
 	if (!buffer)
 	{
-		free_all(stash, NULL);
+		freer(stash, NULL);
 		stash = NULL;
 		return (NULL);
 	}
-	newline_i = find_newline(stash);
 	while (newline_i == -1)
 	{
 		bytes = read(fd, buffer, BUFFER_SIZE);
-		if (bytes == 0)
-			break ;
-		if (bytes < 0)
+		if (bytes == -1)
 		{
-			free_all(stash, buffer);
+			freer(buffer, stash);
 			stash = NULL;
 			return (NULL);
 		}
+		if (bytes == 0)
+			break ;
 		buffer[bytes] = '\0';
 		if (!stash)
 		{
 			stash = ft_strjoin_free(NULL, buffer);
 			if (!stash)
 			{
-				if (buffer)
-					free(buffer);
+				freer(NULL, buffer);
+				stash = NULL;
 				return (NULL);
 			}
 		}
@@ -131,7 +130,7 @@ char	*get_next_line(int fd)
 			temp = ft_strjoin_free(stash, buffer);
 			if (!temp)
 			{
-				free_all(stash, buffer);
+				freer(stash, buffer);
 				stash = NULL;
 				return (NULL);
 			}
@@ -141,20 +140,18 @@ char	*get_next_line(int fd)
 	}
 	if (newline_i == -1)
 	{
-		if (buffer)
-			free(buffer);
-		temp = stash;
+		line = stash;
 		stash = NULL;
-		return (temp);
+		freer(NULL, buffer);
+		return (line);
 	}
-	line = malloc((newline_i + 2) * sizeof(char));
+	line = malloc((newline_i + 1 + 1) * sizeof(char));
 	if (!line)
 	{
-		free_all(stash, buffer);
+		freer(buffer, stash);
 		stash = NULL;
 		return (NULL);
 	}
-	i = 0;
 	while (i <= newline_i)
 	{
 		line[i] = stash[i];
@@ -167,16 +164,16 @@ char	*get_next_line(int fd)
 		temp = ft_strjoin_free(NULL, stash + newline_i + 1);
 		if (!temp)
 		{
-			free_all(stash, buffer);
+			freer(stash, buffer);
+			freer(NULL, line);
 			stash = NULL;
 			return (NULL);
 		}
 	}
-	if (stash)
-		free(stash);
+	freer(stash, NULL);
 	stash = temp;
-	if (buffer)
-		free(buffer);
+	temp = NULL;
+	freer(NULL, buffer);
 	return (line);
 }
 
@@ -215,4 +212,3 @@ int	main(void)
 	close(fd);
 	return (0);
 }
-
