@@ -9,62 +9,55 @@
 
 int	main(int argc, char *argv[])
 {
-	char	*input;
+	char	*line;
 	char	*censor;
 	int		i;
+	int		chars_matched;
 	ssize_t	bytes;
-	int		bytes_matched;
 
 	if (argc != 2)
-		return (0);
-	input = malloc(BUFFER_SIZE * sizeof(char));
-	if (!input)
-	{
-		perror("Error");
 		return (1);
-	}
-	bytes_matched = 0;
 	censor = (char *)argv[1];
-	while ((bytes = read(0, input, BUFFER_SIZE)) > 0)
+	chars_matched = 0;
+	line = malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	if (!line)
+		return (1);
+	while ((bytes = read(0, line, BUFFER_SIZE)) > 0)
 	{
 		i = 0;
 		while (i < bytes)
 		{
-			if (input[i] == censor[bytes_matched])
+			if (line[i] == censor[chars_matched])
 			{
-				bytes_matched++;
-				if (censor[bytes_matched] == '\0')
+				chars_matched++;
+				if (censor[chars_matched] == '\0')
 				{
-					while (bytes_matched > 0)
+					while (chars_matched > 0)
 					{
 						write(1, "*", 1);
-						bytes_matched--;
+						chars_matched--;
 					}
 				}
 			}
 			else
 			{
-				if (bytes_matched > 0)
+				if (chars_matched > 0)
 				{
-					write(1, censor, bytes_matched);
-					bytes_matched = 0;
+					write(1, censor, chars_matched);
+					chars_matched = 0;
 					i--;
 				}
 				else
-					write(1, &input[i], 1);
+					write(1, &line[i], 1);
 			}
 			i++;
 		}
 	}
-	if (bytes_matched > 0)
-		write(1, censor, bytes_matched);
+	free(line);
 	if (bytes == -1)
-	{
-		if (input)
-			free(input);
-		perror("Error");
 		return (1);
-	}
-	free(input);
+	return (0);
+	if (chars_matched > 0)
+		write(1, censor, chars_matched);
 	return (0);
 }
