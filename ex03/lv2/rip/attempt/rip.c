@@ -17,8 +17,6 @@ static char	*strip_input(char *str)
 {
 	int	i;
 
-	if (!str)
-		return (NULL);
 	i = 0;
 	while (str[i] == ')')
 	{
@@ -39,15 +37,13 @@ static int	validator(char *str)
 	int	i;
 	int	c;
 
-	if (!str)
-		return (0);
 	i = 0;
 	c = 0;
 	while (str[i])
 	{
 		if (str[i] == '(')
 			c++;
-		if (str[i] == ')')
+		else if (str[i] == ')')
 			c--;
 		if (c < 0)
 			return (0);
@@ -61,28 +57,26 @@ static int	validator(char *str)
 static void	get_limits(char *str, int *left_rem, int *right_rem)
 {
 	int	i;
-	int	balance;
+	int	c;
 
-	if (!str)
-		return ;
 	i = 0;
+	c = 0;
 	*left_rem = 0;
 	*right_rem = 0;
-	balance = 0;
 	while (str[i])
 	{
 		if (str[i] == '(')
-			balance++;
-		if (str[i] == ')')
-			balance--;
-		if (balance < 0)
+			c++;
+		else if (str[i] == ')')
+			c--;
+		if (c < 0)
 		{
 			(*right_rem)++;
-			balance = 0;
+			c = 0;
 		}
 		i++;
 	}
-	*left_rem = balance;
+	*left_rem = c;
 }
 
 static void	solve(char *str, int left_rem, int right_rem, int i)
@@ -90,36 +84,41 @@ static void	solve(char *str, int left_rem, int right_rem, int i)
 	if (left_rem == 0 && right_rem == 0)
 	{
 		if (validator(str) == 1)
+		{
 			puts(str);
-		return ;
+			return ;
+		}
 	}
-	while (str[i])
+	else
 	{
-		if (str[i] == '(' && left_rem > 0)
+		while (str[i])
 		{
-			str[i] = ' ';
-			solve(str, left_rem - 1, right_rem, i + 1);
-			str[i] = '(';
+			if (str[i] == '(' && left_rem > 0)
+			{
+				str[i] = ' ';
+				solve(str, left_rem - 1, right_rem, i + 1);
+				str[i] = '(';
+			}
+			else if (str[i] == ')' && right_rem > 0)
+			{
+				str[i] = ' ';
+				solve(str, left_rem, right_rem - 1, i + 1);
+				str[i] = ')';
+			}
+			i++;
 		}
-		if (str[i] == ')' && right_rem > 0)
-		{
-			str[i] = ' ';
-			solve(str, left_rem, right_rem - 1, i + 1);
-			str[i] = ')';
-		}
-		i++;
 	}
 }
 
-int	main(int argc, char *argv[])
+int main (int argc, char *argv[])
 {
-	char	*str;
-	int		left_rem;
-	int		right_rem;
+	char *str;
+	int left_rem;
+	int right_rem;
 
 	if (argc != 2)
 		return (1);
-	str = strip_input((char *)argv[1]);
+	str = strip_input((char *) argv[1]);
 	left_rem = 0;
 	right_rem = 0;
 	get_limits(str, &left_rem, &right_rem);

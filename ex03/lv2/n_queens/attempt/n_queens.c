@@ -6,21 +6,19 @@
 static int	check_poss(int *board, int current_col, int target_row)
 {
 	int	i;
-	int	hor_dis;
-	int	ver_dis;
+	int	hor_dist;
+	int	ver_dist;
 
 	i = 0;
-	hor_dis = 0;
-	ver_dis = 0;
 	while (i < current_col)
 	{
 		if (board[i] == target_row)
 			return (0);
-		hor_dis = current_col - i;
-		ver_dis = board[i] - target_row;
-		if (ver_dis < 0)
-			ver_dis *= -1;
-		if (hor_dis == ver_dis)
+		hor_dist = current_col - i;
+		ver_dist = target_row - board[i];
+		if (ver_dist < 0)
+			ver_dist *= -1;
+		if (hor_dist == ver_dist)
 			return (0);
 		i++;
 	}
@@ -46,7 +44,7 @@ static void	solve(int n, int *board, int current_col)
 	}
 	while (row < n)
 	{
-		if (check_poss(board, current_col, row) == 1)
+		if (check_poss(board, current_col, row))
 		{
 			board[current_col] = row;
 			solve(n, board, current_col + 1);
@@ -57,14 +55,14 @@ static void	solve(int n, int *board, int current_col)
 
 int	main(int argc, char *argv[])
 {
-	int	n;
-	int	*board;
+	int *board;
+	int n;
 
 	if (argc != 2)
 		return (1);
 	n = atoi(argv[1]);
 	if (n < 4 && n != 1)
-		return (0);
+		return (1);
 	board = malloc(n * sizeof(int));
 	if (!board)
 		return (1);

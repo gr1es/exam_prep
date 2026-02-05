@@ -43,6 +43,7 @@ Logic:
 * Walk through the string tracking the balance (similar to the validator).
 * Right Removals: If the balance drops below 0 (meaning too many closing brackets), increment your *right_rem counter and reset the balance to 0.
 * Left Removals: After the loop finishes, whatever positive number is left in the balance represents the excess opening brackets that were never closed. Assign this value to *left_rem.
+}
 
 ---
 
