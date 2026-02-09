@@ -1,9 +1,8 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-static int	check_poss(int *board, int current_col, int target_row)
+static int	validator(int *board, int current_col, int target_row)
 {
 	int	i;
 	int	hor_dist;
@@ -40,29 +39,31 @@ static void	solve(int n, int *board, int current_col)
 				fprintf(stdout, " ");
 		}
 		fprintf(stdout, "\n");
-		return ;
 	}
-	while (row < n)
+	else
 	{
-		if (check_poss(board, current_col, row))
+		while (row < n)
 		{
-			board[current_col] = row;
-			solve(n, board, current_col + 1);
+			if (validator(board, current_col, row) == 1)
+			{
+				board[current_col] = row;
+				solve(n, board, current_col + 1);
+			}
+			row++;
 		}
-		row++;
 	}
 }
 
-int	main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-	int *board;
 	int n;
+	int *board;
 
 	if (argc != 2)
 		return (1);
-	n = atoi(argv[1]);
+	n = atoi((char*)argv[1]);
 	if (n < 4 && n != 1)
-		return (1);
+		return (0);
 	board = malloc(n * sizeof(int));
 	if (!board)
 		return (1);

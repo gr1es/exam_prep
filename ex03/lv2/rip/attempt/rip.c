@@ -17,6 +17,8 @@ static char	*strip_input(char *str)
 {
 	int	i;
 
+	if (!str)
+		return (NULL);
 	i = 0;
 	while (str[i] == ')')
 	{
@@ -43,7 +45,7 @@ static int	validator(char *str)
 	{
 		if (str[i] == '(')
 			c++;
-		else if (str[i] == ')')
+		if (str[i] == ')')
 			c--;
 		if (c < 0)
 			return (0);
@@ -67,7 +69,7 @@ static void	get_limits(char *str, int *left_rem, int *right_rem)
 	{
 		if (str[i] == '(')
 			c++;
-		else if (str[i] == ')')
+		if (str[i] == ')')
 			c--;
 		if (c < 0)
 		{
@@ -81,13 +83,10 @@ static void	get_limits(char *str, int *left_rem, int *right_rem)
 
 static void	solve(char *str, int left_rem, int right_rem, int i)
 {
-	if (left_rem == 0 && right_rem == 0)
+	if (right_rem == 0 && left_rem == 0)
 	{
 		if (validator(str) == 1)
-		{
 			puts(str);
-			return ;
-		}
 	}
 	else
 	{
@@ -110,15 +109,15 @@ static void	solve(char *str, int left_rem, int right_rem, int i)
 	}
 }
 
-int main (int argc, char *argv[])
+int	main(int argc, char *argv[])
 {
-	char *str;
-	int left_rem;
-	int right_rem;
+	char	*str;
+	int		left_rem;
+	int		right_rem;
 
 	if (argc != 2)
 		return (1);
-	str = strip_input((char *) argv[1]);
+	str = strip_input((char *)argv[1]);
 	left_rem = 0;
 	right_rem = 0;
 	get_limits(str, &left_rem, &right_rem);

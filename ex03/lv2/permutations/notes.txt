@@ -1,0 +1,85 @@
+and how the recursion worksGUIDING NOTES: PERMUTATIONS PROJECT
+
+    HIGH LEVEL STRATEGY: SORT THEN SOLVE The requirement is to print permutations in alphabetical order.
+
+    Do not try to sort the results after generating them.
+
+    Instead, sort the input string (argument) first (e.g., "cba" becomes "abc").
+
+    If the input is sorted, a standard recursive algorithm naturally produces sorted output.
+
+    COMPONENT BREAKDOWN
+
+A. sort_input (The Preparation)
+
+    Goal: Rearrange the input string into ascending ASCII order.
+
+    Algorithm: Bubble sort is the simplest approach.
+
+    The Trap (Null Terminator): When comparing current char vs next char, strictly ensure the next char is NOT the null terminator (\0). If you swap a character with \0, you cut the string short.
+
+    The Trap (Restarting): If a swap happens, you must ensure the loop index resets (or a flag is set) so you re-scan the string to catch elements that moved to the left.
+
+B. The 'used' Array (Crucial Concept)
+
+    What is it? An integer array of the same length as the string.
+
+    Why? Since the recursive function loops through the entire source string every time, you need a way to know which characters are currently "checked out" (sitting in the result buffer).
+
+    Logic:
+
+        used[j] corresponds to sorted[j]
+
+        0 means the character at index j is FREE to take.
+
+        1 means the character at index j is TAKEN.
+
+C. permute (The Recursive Engine)
+
+    This function builds the answer one character at a time.
+
+    Parameters needed: source string, result buffer, used array, total length, and current index 'i' (depth).
+
+    Logic Flow:
+
+        Base Case: If current index 'i' equals total length, the result buffer is full. Null-terminate it, print it (puts), and return.
+
+        Recursive Step: Loop through the source string with iterator 'j' (from 0 to len).
+
+            Check: Is used[j] equal to 0?
+
+            Lock: Set used[j] to 1.
+
+            Copy: Copy sorted[j] into res[i].
+
+            Recurse: Call the function again for the next slot (i + 1).
+
+            Unlock (Backtrack): Set used[j] back to 0. (This is vital! It frees the character for the next iteration).
+
+D. main (The Manager)
+
+    Validation: Check argc.
+
+    Memory:
+
+        Allocate 'used' array (use calloc to zero it out, or malloc + loop).
+
+        Allocate 'res' string (length + 1 for null terminator).
+
+    Cleanup: Free both arrays before exiting.
+
+    COMMON TRAPS & RED FLAGS
+
+    Variable Confusion: In the permute function, you have 'i' (the depth/index of the result string you are writing to) and 'j' (the iterator for the source string). Do not mix them up.
+
+        Write to res[i]
+
+        Read from sorted[j]
+
+        Check used[j]
+
+    Duplicate Output: If you see "aaa", "bbb" printed, you forgot the "if (used[j] == 0)" check.
+
+    Missing Output / Crash: If the program runs but prints nothing or crashes, check if you reset used[j] to 0 after the recursive call. If you don't unlock, the characters stay "taken" forever.
+
+    Infinite Loop in Sort: If your sort function swaps but doesn't increment the index correctly, or resets the index incorrectly, it might hang. Ensure the loop can eventually reach the null terminator.
