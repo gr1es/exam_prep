@@ -1,4 +1,4 @@
-and how the recursion worksGUIDING NOTES: PERMUTATIONS PROJECT
+GUIDING NOTES: PERMUTATIONS PROJECT
 
     HIGH LEVEL STRATEGY: SORT THEN SOLVE The requirement is to print permutations in alphabetical order.
 
