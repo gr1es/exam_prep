@@ -8,10 +8,12 @@ Level 1:
 
 Level 2:
 
-	ft_nqueens
+	n_queens
 
-	ft_powerset
+	powerset
 
-	ft_permutations
+	permutations
 
 	rip
+
+	tsp
