@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 // Your ft_popen implementation goes here
 int ft_popen(const char *file, char *const argv[], char type);
@@ -39,7 +40,7 @@ char *get_next_line(int fd)
             break;
     }
     
-    if (bytes_read < 0 || (bytes_read == 0 && i == 0))
+    if (bytes_read <= 0 && i == 0)
     {
         free(line);
         return (NULL);
@@ -55,14 +56,12 @@ int main(void)
     char *line;
     int  saved_stdin;
 
-    printf("--- Test 1: ft_popen(\"ls\", ..., 'r') ---\n");
+    // ---------------------------------------------------------
+    printf("\n=== TEST 1: Basic Read ('r') ===\n");
+    printf("Expected: List of files in current directory\n");
+    printf("--------------------------------------------\n");
     fd = ft_popen("ls", (char *const []){"ls", NULL}, 'r');
-    
-    if (fd == -1)
-    {
-        printf("Test 1 Error: ft_popen failed to launch 'ls'.\n");
-    }
-    else
+    if (fd != -1)
     {
         while ((line = get_next_line(fd)))
         {
@@ -71,50 +70,91 @@ int main(void)
         }
         close(fd);
     }
+    else
+        printf("Test 1 Failed: ft_popen returned -1\n");
 
-    printf("\n--- Test 2: ls | grep c ---\n");
-    
-    // Step 2a: Launch ls
-    fd = ft_popen("ls", (char *const []){"ls", NULL}, 'r');
-    if (fd == -1)
+    // ---------------------------------------------------------
+    printf("\n=== TEST 2: Basic Write ('w') ===\n");
+    printf("Expected: 'apple', 'mango', 'zebra' printed in alphabetical order\n");
+    printf("--------------------------------------------\n");
+    fd = ft_popen("sort", (char *const []){"sort", NULL}, 'w');
+    if (fd != -1)
     {
-        printf("Test 2 Error: ft_popen failed to launch initial 'ls'.\n");
-        return (1);
-    }
-
-    // Save original stdin so we can restore it later, keeping the program stable
-    saved_stdin = dup(0);
-    
-    // Redirect ls output (fd) to standard input (0)
-    dup2(fd, 0);
-    close(fd); // We can close the original fd now that 0 is pointing to it
-
-    // Step 2b: Launch grep
-    // Grep will read from 0, which is now receiving data from the 'ls' pipe
-    fd = ft_popen("grep", (char *const []){"grep", "c", NULL}, 'r');
-    if (fd == -1)
-    {
-        printf("Test 2 Error: ft_popen failed to launch 'grep'.\n");
+        // Write unsorted data into the pipe
+        write(fd, "zebra\n", 6);
+        write(fd, "apple\n", 6);
+        write(fd, "mango\n", 6);
         
-        // Cleanup before exiting
-        dup2(saved_stdin, 0);
-        close(saved_stdin);
-        return (1);
+        // Closing the write end sends EOF to 'sort', triggering it to process and print
+        close(fd); 
+        
+        // Sleep briefly to let the child process 'sort' finish printing to the terminal 
+        // before our main program prints the next test header.
+        usleep(100000); 
     }
+    else
+        printf("Test 2 Failed: ft_popen returned -1\n");
 
-    // Read the final output from grep
-    while ((line = get_next_line(fd)))
+    // ---------------------------------------------------------
+    printf("\n=== TEST 3: Chaining (ls | grep .c) ===\n");
+    printf("Expected: Only files containing '.c'\n");
+    printf("--------------------------------------------\n");
+    fd = ft_popen("ls", (char *const []){"ls", NULL}, 'r');
+    if (fd != -1)
     {
-        printf("%s", line);
-        free(line);
+        saved_stdin = dup(STDIN_FILENO);
+        dup2(fd, STDIN_FILENO);
+        close(fd); 
+
+        fd = ft_popen("grep", (char *const []){"grep", ".c", NULL}, 'r');
+        if (fd != -1)
+        {
+            while ((line = get_next_line(fd)))
+            {
+                printf("%s", line);
+                free(line);
+            }
+            close(fd);
+        }
+        
+        dup2(saved_stdin, STDIN_FILENO);
+        close(saved_stdin);
     }
+
+    // ---------------------------------------------------------
+    printf("\n=== TEST 4: Error Handling (Invalid Type) ===\n");
+    printf("Expected: ft_popen gracefully returns -1\n");
+    printf("--------------------------------------------\n");
+    fd = ft_popen("ls", (char *const []){"ls", NULL}, 'x');
+    if (fd == -1)
+        printf("Success: ft_popen correctly rejected type 'x'.\n");
+    else
+    {
+        printf("Failure: ft_popen accepted invalid type 'x'.\n");
+        close(fd);
+    }
+
+    // ---------------------------------------------------------
+    printf("\n=== TEST 5: Error Handling (Invalid Command) ===\n");
+    printf("Expected: Child process exits cleanly, read returns 0 bytes (no hang)\n");
+    printf("--------------------------------------------\n");
     
-    close(fd);
+    // Note: ft_popen itself returns a valid FD because pipe() and fork() succeed.
+    // The failure happens asynchronously in the child during execvp.
+    fd = ft_popen("does_not_exist", (char *const []){"does_not_exist", NULL}, 'r');
+    if (fd != -1)
+    {
+        line = get_next_line(fd);
+        if (line == NULL)
+            printf("Success: Read safely returned NULL after execvp failed.\n");
+        else
+        {
+            printf("Failure: Read returned data: %s\n", line);
+            free(line);
+        }
+        close(fd);
+    }
 
-    // Restore standard input to normal
-    dup2(saved_stdin, 0);
-    close(saved_stdin);
-
-    printf("\n--- Tests Complete ---\n");
+    printf("\n=== ALL TESTS COMPLETED ===\n");
     return (0);
 }

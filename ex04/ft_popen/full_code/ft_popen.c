@@ -72,3 +72,6 @@ int	ft_popen(const char *file, char *const argv[], char type)
 		// since the parent process wouldn't be able to return anything
 	}
 }
+
+// note: exit() forcefully closes all open FDs,
+	// so manual closing is not necessary

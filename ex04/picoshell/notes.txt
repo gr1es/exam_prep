@@ -1,0 +1,78 @@
+PICOSHELL: EXAM PREPARATION GUIDE
+=================================
+
+1. THE BLUEPRINT
+----------------
+Required Headers:
+#include <stdlib.h>    // for exit()
+#include <sys/types.h> // for pid_t
+#include <sys/wait.h>  // for wait()
+#include <unistd.h>    // for fork(), pipe(), close(), dup2(), execvp()
+
+Function Signature:
+int picoshell(char **cmds[]);
+
+Objective:
+Execute a null-terminated list of commands, piping the output of one into the input of the next. The parent process acts purely as a coordinator: it creates pipes, spawns children, manages the file descriptors, and waits for all children to finish.
+
+
+2. CORE MECHANISMS
+------------------
+- prev_fd: The "look-back" variable. Stores the read-end (fd[0]) of the previous pipe so the next child can read from it. Starts initialized to -1.
+- pipe(fd): Opens a new pipe for the current command to speak to the next command.
+- fork(): Clones the process. MUST happen for every single command.
+- wait(NULL): Pauses the parent until a child dies. Looping this cleans up all zombies.
+
+
+3. STEP-BY-STEP ARCHITECTURE
+----------------------------
+
+PHASE 1: Setup & Loop
+  - Initialize 'prev_fd = -1' and an iterator 'i = 0'.
+  - Start a while loop: while (cmds[i])
+
+PHASE 2: Look Forward (The New Pipe)
+  - Check if there is a next command: if (cmds[i + 1])
+  - If yes, call pipe(fd). Return 1 on failure.
+
+PHASE 3: The Fork
+  - Fork the process: pid = fork(). This MUST happen outside the pipe condition!
+  - If fork fails (pid == -1):
+      -> If you just opened a new pipe (cmds[i + 1]), close fd[0] and fd[1].
+      -> If you were holding a previous pipe (prev_fd != -1), close prev_fd.
+      -> return 1.
+
+PHASE 4: The Child Process (PID == 0)
+  - Handle Input (Look Back):
+      -> If prev_fd != -1: 
+          -> dup2(prev_fd, 0). (If fails, close prev_fd, close new FDs if they exist, exit 1).
+          -> close(prev_fd).
+  - Handle Output (Look Forward):
+      -> If cmds[i + 1] exists:
+          -> dup2(fd[1], 1). (If fails, close new FDs, exit 1. prev_fd is already closed!).
+          -> close(fd[0]) and close(fd[1]).
+  - Execute:
+      -> execvp(cmds[i][0], cmds[i]).
+      -> exit(1) (Safety net if execvp fails).
+
+PHASE 5: The Parent Process (PID != 0)
+  - Clean up the Past:
+      -> If prev_fd != -1, close(prev_fd). The child has it now.
+  - Prepare for the Future:
+      -> If cmds[i + 1] exists (you made a pipe this loop):
+          -> close(fd[1]). The parent NEVER writes to the pipe.
+          -> prev_fd = fd[0]. Save the read end for the NEXT loop iteration.
+  - Increment iterator: i++.
+
+PHASE 6: The Wait Loop
+  - Once the while loop finishes, wait for all children.
+  - while (wait(NULL) != -1) ;
+  - return 0.
+
+
+4. COMMON PITFALLS TO AVOID
+---------------------------
+- The Missing Final Fork: Do NOT put fork() inside the 'if (cmds[i + 1])' block. The last command in a pipeline does not need a new pipe, but it still needs to be forked and executed.
+- The Parent Hang (Pipe Leak): In the parent process, if you create a pipe, you MUST close fd[1] and save fd[0] into prev_fd. If the parent leaves fd[1] open, the receiving command will wait forever for an EOF signal.
+- The Uninitialized FD Trap: In error blocks, only close fd[0] and fd[1] if 'cmds[i + 1]' is true. Otherwise, you are calling close() on uninitialized garbage memory, which will crash your program.
+- The Double-Close: In the child process, once you successfully dup2 the prev_fd and close it, do NOT try to close it again if the output dup2 fails later on.
