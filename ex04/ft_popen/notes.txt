@@ -1,0 +1,58 @@
+FT_POPEN: EXAM PREPARATION GUIDE (ENHANCED VERSION)
+===================================================
+
+1. THE BLUEPRINT
+----------------
+Required Headers:
+#include <stdlib.h>    // for exit()
+#include <sys/types.h> // for pid_t
+#include <unistd.h>    // for fork(), pipe(), close(), dup2(), execvp(), STDIN_FILENO, STDOUT_FILENO
+
+Function Signature:
+int ft_popen(const char *file, char *const argv[], char type);
+
+Objective:
+Launch an executable and create a communication pipeline. Must use a child process because execvp replaces the current process entirely, which would prevent the parent from returning the required file descriptor.
+
+
+2. CORE MECHANISMS
+------------------
+- pipe(fd): Opens a unidirectional data tube. fd[0] is for reading, fd[1] is for writing.
+- fork(): Clones the current process. Returns 0 to the Child, and the Child's actual PID to the Parent.
+- dup2(oldfd, newfd): Closes 'newfd' and makes it a duplicate of 'oldfd'.
+- STDIN_FILENO / STDOUT_FILENO: Standard POSIX macros representing 0 and 1. Highly readable.
+- execvp(file, argv): Replaces the child process with the requested executable.
+- exit(status): Immediately terminates the process if dup2 or execvp fails.
+
+
+3. STEP-BY-STEP ARCHITECTURE
+----------------------------
+
+PHASE 1: Initialization & Validation
+  - Check for invalid inputs: 'type' must be 'r' or 'w', and 'file' and 'argv' must NOT be NULL pointers. Return -1 if invalid.
+  - Declare an integer array of size 2 for the pipe.
+  - Call pipe(). If it fails, return -1.
+
+PHASE 2: The Fork
+  - Declare a 'pid_t' variable to hold the Process ID.
+  - Call fork() and store the result.
+  - If fork fails (PID is -1), immediately close both ends of the pipe to prevent leaks, then return -1.
+
+PHASE 3: The Parent Process (PID != 0)
+  - The parent only needs one end of the pipe and must close the other.
+  - If 'type' is 'r' (Parent wants to read):
+      -> Close the write end (fd[1]).
+      -> Return the read end (fd[0]).
+  - If 'type' is 'w' (Parent wants to write):
+      -> Close the read end (fd[0]).
+      -> Return the write end (fd[1]).
+
+PHASE 4: The Child Process (PID == 0)
+  - If 'type' is 'r' (Parent reads -> Child writes):
+      -> Redirect STDOUT_FILENO to the pipe's write end (fd[1]) using dup2.
+      -> Add error checking: if dup2 returns -1, call exit(-1).
+  - If 'type' is 'w' (Parent writes -> Child reads):
+      -> Redirect STDIN_FILENO to the pipe's read end (fd[0]) using dup2.
+  - Consolidated Cleanup: Because dup2 successfully copied the required FDs to the standard streams, explicitly close BOTH original pipe ends (fd[0] and fd[1]) to prevent leaks.
+  - Call execvp() using the 'file' and 'argv' parameters.
+  - Call exit(-1) to handle the case where execvp fails.

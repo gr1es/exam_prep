@@ -1,13 +1,14 @@
 
-#include <unistd.h>
-#include <stdlib.h>
+#include <stdlib.h>    //  for exit()
+#include <sys/types.h> // for pid_t
+#include <unistd.h>    // for fork(), pipe(), close(), dup2(), execvp()
 
 int	ft_popen(const char *file, char *const argv[], char type)
 {
-	int	fd[2];
-	int	pid;
+	int		fd[2];
+	pid_t	pid;
 
-	if (type != 'r' && type != 'w')
+	if ((type != 'r' && type != 'w') || !file || !argv)
 		return (-1);
 	if (pipe(fd) == -1)
 		return (-1);
@@ -19,8 +20,8 @@ int	ft_popen(const char *file, char *const argv[], char type)
 		close(fd[1]);
 		return (-1);
 	}
-	// current process is the parent
 	// fork passes the child ID to the parent and 0 to the child
+	// current process is the parent
 	if (pid != 0)
 	{
 		// parent wants to read
@@ -38,34 +39,36 @@ int	ft_popen(const char *file, char *const argv[], char type)
 			return (fd[1]);
 		}
 	}
-	// current process is the child
+	// current process is the child (if (pid == 0) {[...]})
 	else
 	{
 		// 'r' means that the parent wants to read
 		// --> child needs to write
 		if (type == 'r')
 		{
-			// close read end of pipe (not used by child)
-			close(fd[0]);
 			// this redirects child stdout to write end of pipe
-			dup2(fd[1], 1);
-			// stdout is already pointing to fd of fd[1], so it can be closed
-			close(fd[1]);
+			if (dup2(fd[1], STDOUT_FILENO) == -1)
+				exit(-1);
 		}
 		// 'w' (other possibility) means that the parent wants to write
 		// --> child needs to read
 		else
 		{
-			// close write end of pipe (not used by child)
-			close(fd[1]);
 			// this redirects child stdin to read end of pipe
-			dup2(fd[0], 0);
-			// stdin is already pointing to fd of fd[0], so it can be closed
-			close(fd[0]);
+			if (dup2(fd[0], STDIN_FILENO) == -1)
+				exit(-1);
 		}
+		// close up the custom streams,
+		// as they have been duplicated unto STDIN/STDOUT
+		close(fd[0]);
+		close(fd[1]);
 		// this replaces current process with process of executable from PATH-file
 		execvp(file, argv);
 		// execvp replaces further lines, so exit just handles a execvp failure
-		exit(1);
+		exit(-1);
+		// -> execvp takes over the current process and terminates afterwards
+		// --> this is why execvp has to be called in its own forked process
+		// it can't be done in one process,
+		// since the parent process wouldn't be able to return anything
 	}
 }
