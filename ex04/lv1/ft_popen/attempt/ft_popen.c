@@ -5,8 +5,8 @@
 
 int	ft_popen(const char *file, char *const argv[], char type)
 {
-	int		fd[2];
 	pid_t	pid;
+	int		fd[2];
 
 	if (!file || !argv || (type != 'r' && type != 'w'))
 		return (-1);
@@ -18,7 +18,20 @@ int	ft_popen(const char *file, char *const argv[], char type)
 		close(fd[1]);
 		return (-1);
 	}
-	if (pid == 0)
+	if (pid != 0)
+	{
+		if (type == 'r')
+		{
+			close(fd[1]);
+			return (fd[0]);
+		}
+		else
+		{
+			close(fd[0]);
+			return (fd[1]);
+		}
+	}
+	else
 	{
 		if (type == 'r')
 		{
@@ -43,17 +56,5 @@ int	ft_popen(const char *file, char *const argv[], char type)
 		execvp(file, argv);
 		exit(-1);
 	}
-	else
-	{
-		if (type == 'r')
-		{
-			close(fd[1]);
-			return (fd[0]);
-		}
-		else
-		{
-			close(fd[0]);
-			return (fd[1]);
-		}
-	}
+	return (0);
 }
