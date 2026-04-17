@@ -39,7 +39,7 @@ int	ft_popen(const char *file, char *const argv[], char type)
 			{
 				close(fd[0]);
 				close(fd[1]);
-				return (-1);
+				exit(-1);
 			}
 		}
 		else
@@ -48,7 +48,7 @@ int	ft_popen(const char *file, char *const argv[], char type)
 			{
 				close(fd[0]);
 				close(fd[1]);
-				return (-1);
+				exit(-1);
 			}
 		}
 		close(fd[0]);
@@ -56,5 +56,5 @@ int	ft_popen(const char *file, char *const argv[], char type)
 		execvp(file, argv);
 		exit(-1);
 	}
-	return (0);
+	return (-1);
 }

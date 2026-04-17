@@ -22,7 +22,11 @@ int	picoshell(char **cmds[])
 		{
 			// ... open a new pipe
 			if (pipe(fd) == -1)
+			{
+				if (prev_fd != -1)
+					close(prev_fd);
 				return (1);
+			}
 		}
 		// fork in any case
 		if ((pid = fork()) == -1)
