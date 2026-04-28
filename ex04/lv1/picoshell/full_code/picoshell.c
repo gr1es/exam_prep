@@ -1,100 +1,97 @@
+#define _POSIX_C_SOURCE 200809L
+#include <errno.h>
+#include <signal.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h> // for strsignal
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
-
-#include <stdlib.h>    // for exit()
-#include <sys/types.h> // for pid_t
-#include <sys/wait.h>  // for wait
-#include <unistd.h>    // for NULL, pipe, fork, dup2, execvp, close
-
-int	picoshell(char **cmds[])
+static void	handler(int sig)
 {
-	int		prev_fd;
-	int		fd[2];
-	pid_t	pid;
-	int		i;
+	// cast to void to prevent strict compiler unused parameter warnings
+	(void)sig;
+}
 
-	prev_fd = -1;
-	i = 0;
-	// loop through every command (= every array of strings)
-	while (cmds[i])
+int	sandbox(void (*f)(void), unsigned int timeout, bool verbose)
+{
+	pid_t				pid;
+	int					status;
+	struct sigaction	sa;
+
+	// renamed from signal to status to prevent shadowing the signal() function
+	// configure the sigaction struct for the timeout logic
+	sa.sa_handler = handler;
+	sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGALRM, &sa, NULL);
+	// fork in any case and handle failure
+	if ((pid = fork()) == -1)
+		return (-1);
+	// process is child
+	if (pid == 0)
 	{
-		// if there is a following command ...
-		if (cmds[i + 1])
+		// execute the requested function and exit cleanly if it finishes
+		f();
+		exit(0);
+	}
+	// process is parent
+	else
+	{
+		// set the timer for the timeout
+		alarm(timeout);
+		// wait pauses the parent until the child changes state
+		// waitpid returning -1 means it failed
+		if (waitpid(pid, &status, 0) == -1)
 		{
-			// ... open a new pipe
-			if (pipe(fd) == -1)
+			// if errno is EINTR,
+				// the failure was caused by our SIGALRM interruption
+			if (errno == EINTR)
 			{
-				if (prev_fd != -1)
-					close(prev_fd);
+				// kill the stuck child process
+				kill(pid, SIGKILL);
+				// reap the killed child to prevent a zombie process
+				waitpid(pid, &status, 0);
+				if (verbose == true)
+					// fixed format specifier to %u for unsigned int
+					printf("Bad function: timed out after %u seconds\n",
+						timeout);
+				return (0);
+			}
+		}
+		// if we reach here, the child finished before the timeout
+		// cancel the pending alarm
+		alarm(0);
+		// evaluate if the child exited normally (e.g. via exit())
+		if (WIFEXITED(status))
+		{
+			// check if the exit code is exactly 0 (success)
+			// fixed typo from WEXITsignal to standard macro WEXITSTATUS
+			if (WEXITSTATUS(status) == 0)
+			{
+				if (verbose)
+					printf("Nice function!\n");
 				return (1);
 			}
+			// exited normally, but with an error code
+			else
+			{
+				if (verbose)
+					printf("Bad function: exited with code %d\n",
+						WEXITSTATUS(status));
+				return (0);
+			}
 		}
-		// fork in any case
-		if ((pid = fork()) == -1)
+		// evaluate if the child was terminated by a signal (e.g. segfault)
+		if (WIFSIGNALED(status))
 		{
-			if (cmds[i + 1])
-			{
-				close(fd[0]);
-				close(fd[1]);
-			}
-			// clean up fd if this is not the first process
-			if (prev_fd != -1)
-				close(prev_fd);
-			return (1);
+			if (verbose)
+				printf("Bad function: %s\n", strsignal(WTERMSIG(status)));
+			return (0);
 		}
-		// process is child
-		if (pid == 0)
-		{
-			// if there was a prior process
-			if (prev_fd != -1)
-			{
-				// -> take previous fd as STDIN
-				if (dup2(prev_fd, 0) == -1)
-				{
-					close(prev_fd);
-					if (cmds[i + 1])
-					{
-						close(fd[0]);
-						close(fd[1]);
-					}
-					exit(1);
-				}
-				// close write from prior process
-				close(prev_fd);
-				// in case of pev_fd == -1, it does not need to be closed
-			}
-			// if there is another command coming up ...
-			if (cmds[i + 1])
-			{
-				// ... send this process' output to pipe instead of STDOUT (terminal)
-				if (dup2(fd[1], 1) == -1)
-				{
-					close(fd[0]);
-					close(fd[1]);
-					exit(1);
-				}
-				close(fd[0]);
-				close(fd[1]);
-			}
-			execvp(cmds[i][0], cmds[i]);
-			exit(1);
-		}
-		// process is parent
-		else
-		{
-			if (prev_fd != -1)
-				close(prev_fd);
-			if (cmds[i + 1])
-			{
-				close(fd[1]);
-				prev_fd = fd[0];
-			}
-		}
-		i++;
+		// fallback in case of an unforeseen error
+		return (-1);
 	}
-	// wait pauses the process until any of its children terminates
-	// no children --> wait returns -1
-	// argument = pointer to error code index (not used here)
-	while (wait(NULL) != -1)
-		;
-	return (0);
 }
