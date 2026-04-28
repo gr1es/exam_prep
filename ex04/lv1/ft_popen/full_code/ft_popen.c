@@ -75,3 +75,4 @@ int	ft_popen(const char *file, char *const argv[], char type)
 
 // note: exit() forcefully closes all open FDs,
 	// so manual closing is not necessary
+	// but: including the close() calls is better practice!
