@@ -7,12 +7,12 @@
 int	picoshell(char **cmds[])
 {
 	int		i;
+	int		prev_fd;
 	int		fd[2];
 	pid_t	pid;
-	int		prev_fd;
 
-	prev_fd = -1;
 	i = 0;
+	prev_fd = -1;
 	while (cmds[i])
 	{
 		if (cmds[i + 1])
@@ -26,7 +26,7 @@ int	picoshell(char **cmds[])
 		}
 		if ((pid = fork()) == -1)
 		{
-			if (cmds[i + 1])
+			if (cmds[1 + i])
 			{
 				close(fd[0]);
 				close(fd[1]);
