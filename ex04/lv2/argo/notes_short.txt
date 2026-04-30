@@ -1,0 +1,75 @@
+ARGO MENTAL MODEL: THE GOLDEN SEQUENCE
+================================================================================
+The entire argo exam boils down to memorizing the while(1) loop inside parse_map.
+If you memorize this 5-step sequence, the rest of the code writes itself.
+
+1. KEY:       Must start with '"'. Call parse_string.
+2. COLON:     Must be ':'.
+3. VALUE:     Call parse_value.
+4. REALLOC:   Add +1 to map size. Save key and value.
+5. DELIMITER: Must be '}' (return success) or ',' (continue loop).
+
+Any deviation from this exact sequence? Free memory and return error.
+
+
+EXTERNAL FUNCTION SUMMARY
+================================================================================
+
+I. STREAM NAVIGATION (The "Eyes" of the Parser)
+--------------------------------------------------------------------------------
+- getc(FILE *stream):
+  Reads the next single character from the file. It returns an 'int' so it can
+  represent EOF (-1) safely. This is your primary tool for moving forward.
+
+- ungetc(int c, FILE *stream):
+  The "Undo" button for files. It pushes a character back into the stream so 
+  the next getc() will read it again. This is essential for "peeking" at the 
+  next character without permanently consuming it.
+
+- fscanf(FILE *stream, const char *format, ...):
+  The "Cheat Code" for numbers. By using fscanf(stream, "%d", &dst), you tell 
+  C to automatically read all digits (and a '-' sign), convert them to an 
+  integer, and stop perfectly at the first non-digit character.
+
+
+II. MEMORY MANAGEMENT (The "Body" of the AST)
+--------------------------------------------------------------------------------
+- malloc(size_t size):
+  Allocates a block of raw memory. Used here for creating strings and structs.
+
+- calloc(size_t nmemb, size_t size):
+  Allocates memory and, crucially, clears it all to zero. This is perfect for 
+  the map struct because it automatically sets 'm->data' to NULL and 
+  'm->size' to 0 for you.
+
+- realloc(void *ptr, size_t size):
+  Resizes an existing memory block. It handles the copying of old data to a new 
+  location if necessary. This is the fastest way to expand strings and map 
+  arrays as you find more data.
+
+- free(void *ptr):
+  Releases memory. Vital for "clean_map" functions to ensure your program 
+  doesn't leak memory during a failed parse.
+
+
+III. DATA & OUTPUT (The "Voice" and "Logic")
+--------------------------------------------------------------------------------
+- printf(const char *format, ...):
+  Used strictly for error messages in this assignment. Ensure your error 
+  strings match the subject's requirements exactly.
+
+- isdigit(int c):
+  A helper from ctype.h that returns true if a character is between '0' and '9'. 
+  Use this in your 'parse_value' router to identify when a number starts.
+
+- write(int fd, const void *buf, size_t count):
+  A low-level system call to print to a file descriptor. While allowed, it is 
+  redundant if you use printf, but it could be used for manual error printing 
+  to stderr if you prefer.
+
+
+--------------------------------------------------------------------------------
+A Note on EOF: 
+Always remember that 'getc' returns an 'int', not a 'char'. If you store its 
+result in a 'char', you might fail to detect the EOF (-1) correctly on some 
+systems, which leads to infinite loops.

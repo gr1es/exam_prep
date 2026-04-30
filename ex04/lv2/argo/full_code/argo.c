@@ -6,10 +6,6 @@
 int		parse_value(json *dst, FILE *stream);
 void	free_json(json val);
 
-// =============================================================================
-// 1. UTILITIES
-// =============================================================================
-
 int	error_out(int c)
 {
 	if (c == EOF)
@@ -28,10 +24,6 @@ int	peek(FILE *stream)
 		ungetc(c, stream);
 	return (c);
 }
-
-// =============================================================================
-// 2. LEAK PREVENTION
-// =============================================================================
 
 void	free_map(map *m)
 {
@@ -54,15 +46,12 @@ void	free_json(json val)
 		free_map(val.map);
 }
 
-// =============================================================================
-// 3. PARSERS
-// =============================================================================
-
 int	parse_string(char **dst, FILE *stream)
 {
 	int		len;
 	int		c;
 	char	*str;
+	int		next_c;
 
 	len = 0;
 	if (getc(stream) != '"')
@@ -78,19 +67,26 @@ int	parse_string(char **dst, FILE *stream)
 		}
 		if (c == '\\') // Handle escaping
 		{
-			c = getc(stream);
-			if (c == EOF)
+			next_c = getc(stream);
+			if (next_c == EOF)
 			{
 				free(str);
 				return (error_out(EOF));
 			}
-			if (c != '"' && c != '\\')
+			if (next_c != '"' && next_c != '\\')
 			{
 				free(str);
-				return (error_out(c));
+				return (error_out(next_c));
 			}
+			// Save the backslash first
+			str = realloc(str, len + 2);
+			str[len] = '\\';
+			str[len + 1] = '\0';
+			len++;
+			// Set c to the escaped character so it gets saved below
+			c = next_c;
 		}
-		// Native realloc handles the memory expansion in 3 lines
+		// Save the normal character (or the escaped character)
 		str = realloc(str, len + 2);
 		str[len] = c;
 		str[len + 1] = '\0';
@@ -102,22 +98,22 @@ int	parse_string(char **dst, FILE *stream)
 
 int	parse_map(map **dst, FILE *stream)
 {
+	map		*m;
 	char	*key;
 	json	val;
 	int		c;
 
 	if (getc(stream) != '{')
 		return (-1);
-	map *m = calloc(1, sizeof(map)); // calloc sets data=NULL,
-	size = 0 automatically if (peek(stream) == '}')
+	m = calloc(1, sizeof(map));
+	if (peek(stream) == '}')
 	{
-		getc(stream); // Consume the '}'
+		getc(stream);
 		*dst = m;
 		return (1);
 	}
 	while (1)
 	{
-		// 1. Key
 		if (peek(stream) != '"')
 		{
 			free_map(m);
@@ -128,7 +124,6 @@ int	parse_map(map **dst, FILE *stream)
 			free_map(m);
 			return (-1);
 		}
-		// 2. Colon
 		c = getc(stream);
 		if (c != ':')
 		{
@@ -136,19 +131,16 @@ int	parse_map(map **dst, FILE *stream)
 			free_map(m);
 			return (error_out(c));
 		}
-		// 3. Value
 		if (parse_value(&val, stream) == -1)
 		{
 			free(key);
 			free_map(m);
 			return (-1);
 		}
-		// 4. Realloc the map array (realloc(NULL) acts like malloc)
 		m->data = realloc(m->data, sizeof(pair) * (m->size + 1));
 		m->data[m->size].key = key;
 		m->data[m->size].value = val;
 		m->size++;
-		// 5. Delimiter
 		c = getc(stream);
 		if (c == '}')
 		{
