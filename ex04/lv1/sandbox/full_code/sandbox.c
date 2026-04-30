@@ -21,7 +21,6 @@ int	sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 	int					status;
 	struct sigaction	sa;
 
-	// renamed from signal to status to prevent shadowing the signal() function
 	// configure the sigaction struct for the timeout logic
 	sa.sa_handler = handler;
 	sa.sa_flags = 0;
