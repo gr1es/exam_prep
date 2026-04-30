@@ -1,0 +1,114 @@
+ARGO EXAM 04: JSON STREAM PARSER CONSTRUCTION GUIDE
+================================================================================
+
+PRE-REQUISITES: THE MENTAL MAP
+--------------------------------------------------------------------------------
+Unlike VBC where we traversed a string, ARGO traverses a live FILE stream using 
+getc(). Because spaces are strictly forbidden ("invalid tokens"), any space 
+encountered is an instant failure. 
+
+Data flows recursively through the AST structure provided in argo.h:
+- Root calls parse_value.
+- parse_value checks the first char and routes to parse_string, parse_map, or fscanf.
+- parse_map calls parse_string for the key, and parse_value for the value.
+
+
+STEP 1: UTILITIES & ERRORS
+================================================================================
+Write helper functions to manage the stream cleanly.
+
+WHAT TO DO:
+1. error_out(int c):
+   - if c == EOF, print "unexpected end of input\n"
+   - else, print "unexpected token '%c'\n"
+   - Return -1. (We use lowercase to perfectly match the subject's examples).
+2. peek(FILE *stream):
+   - int c = getc(stream);
+   - if c != EOF, put it back with ungetc(c, stream);
+   - Return c.
+3. expect(FILE *stream, char expected):
+   - Read getc(stream). If it matches expected, return 1.
+   - Else, return error_out(c).
+
+
+STEP 2: PARSING STRINGS
+================================================================================
+WHAT TO DO (int parse_string(char **dst, FILE *stream)):
+1. Call expect(stream, '"'). Return -1 if it fails.
+2. Initialize an empty string: char *str = malloc(1); str[0] = '\0';
+3. Create an infinite while(1) loop to read chars:
+   - int c = getc(stream).
+   - If EOF: free str, return error_out(EOF).
+   - If '"': set *dst = str, return 1.
+   - If '\\' (escape character):
+       - getc(stream) again.
+       - If EOF: return error_out(EOF).
+       - If it is NOT '"' and NOT '\\': return error_out(c).
+   - Reallocation Simulation (Add c to str):
+       - malloc a tmp array of (len + 2).
+       - copy old str to tmp using a loop.
+       - append c and '\0'.
+       - free(str) and point str to tmp. Increment len.
+
+!!! PITFALL - STRING ESCAPES !!!
+The subject limits escapes to ONLY \" and \\. You must error out if the user 
+tries to escape a random letter like \n.
+
+
+STEP 3: PARSING MAPS
+================================================================================
+WHAT TO DO (int parse_map(map **dst, FILE *stream)):
+1. Call expect(stream, '{').
+2. Allocate map struct, set m->data = NULL, m->size = 0.
+3. Check for empty map: if peek is '}', consume it with getc, set dst, return 1.
+4. Create an infinite while(1) loop to read Key-Value pairs:
+   - KEY:
+     - Check if peek() != '"'. If so, free map and error_out(getc).
+     - call parse_string(&key).
+   - COLON:
+     - call expect(stream, ':').
+   - VALUE:
+     - call parse_value(&val).
+   - REALLOCATION:
+     - malloc a tmp pair array of size (m->size + 1).
+     - copy old m->data into tmp.
+     - add key and val to the end.
+     - free(m->data), point m->data to tmp, increment size.
+   - DELIMITER:
+     - getc(stream). If '}', set dst, return 1.
+     - If NOT ',', free map, return error_out(c).
+
+
+STEP 4: THE VALUE ROUTER
+================================================================================
+WHAT TO DO (int parse_value(json *dst, FILE *stream)):
+1. c = peek(stream).
+2. If EOF, return error_out(EOF).
+3. If c == '"': set dst->type to STRING, return parse_string(&dst->string, stream).
+4. If c == '{': set dst->type to MAP, return parse_map(&dst->map, stream).
+5. If c == '-' OR isdigit(c):
+   - set dst->type to INTEGER.
+   - use fscanf(stream, "%d", &dst->integer).
+   - If fscanf != 1, return error_out(getc).
+   - Return 1.
+6. Catch-all: return error_out(getc(stream)) for spaces or invalid tokens.
+
+!!! PITFALL - FSCANF MAGIC !!!
+Because we are guaranteed simple ints, fscanf("%d") perfectly eats all the 
+digits, stops at the exact right place, and leaves the next character (like ',' 
+or '}') sitting in the stream for the map loop to find.
+
+
+STEP 5: ARGO ENTRY POINT
+================================================================================
+WHAT TO DO (int argo(json *dst, FILE *stream)):
+1. Call parse_value(dst, stream). If it returns -1, return -1.
+2. Trailing Garbage Check:
+   - int c = getc(stream);
+   - if c != EOF, return error_out(c).
+3. Return 1.
+
+!!! PITFALL - TRAILING GARBAGE !!!
+If the input is '123a', parse_value reads '123' perfectly. If you forget Step 2, 
+argo succeeds but leaves 'a' unread. Step 2 catches the 'a', throws an error, 
+and perfectly fulfills the strict JSON requirement.

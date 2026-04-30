@@ -1,0 +1,24 @@
+FUNCTION SUMMARY (LEVEL-BASED)
+================================================================================
+
+error_out
+- If '\0': Prints "Unexpected end of input" and terminates the program if the string ended prematurely.
+- Else: Prints the specific unexpected character and terminates the program.
+
+level_3 (The Base Values)
+- If '(': Solves the enclosed sub-equation by recursively calling level_1 and verifies that a matching closing parenthesis exists.
+- Else if digit: Converts a single character digit (0-9) into its actual integer value and advances the index past it.
+- Else: Triggers the error function because it encountered a character that is neither a valid number nor an opening parenthesis.
+
+level_2 (The Multiplications)
+- Base Value Assignment: Fetches the first available base value (level_3) to serve as the starting number.
+- While '*': Continuously consumes the '*' operator and multiplies the running total by the next base value until no more multiplications are chained.
+
+level_1 (The Additions)
+- Base Term Assignment: Fetches the first fully resolved chunk of multiplications (level_2) to serve as the starting number.
+- While '+': Continuously consumes the '+' operator and adds the next resolved multiplication chunk to the running total until no more additions are chained.
+
+main
+- If argc != 2: Silently exits the program to prevent crashes if the user provides the wrong number of arguments.
+- Execution: Initiates the parsing hierarchy by passing the string and the address of the index to level_1.
+- If not '\0': Triggers an error if the parser finished evaluating the math but there are still unparsed characters left at the end of the string.

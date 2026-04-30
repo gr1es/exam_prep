@@ -1,0 +1,100 @@
+ARGO EXAM 04: JSON STREAM PARSER (COMPRESSED REALLOC VERSION)
+================================================================================
+
+PRE-REQUISITES: THE MENTAL MAP
+--------------------------------------------------------------------------------
+Data flows recursively through the AST structure provided in argo.h:
+- Root calls parse_value.
+- parse_value checks the first char and routes to parse_string, parse_map, or fscanf.
+- parse_map calls parse_string for the key, and parse_value for the value.
+
+
+STEP 1: UTILITIES & MEMORY
+================================================================================
+1. error_out(int c):
+   - if c == EOF, print "unexpected end of input\n"
+   - else, print "unexpected token '%c'\n"
+   - Return -1. (Lowercase matches the subject).
+2. peek(FILE *stream):
+   - int c = getc(stream);
+   - if c != EOF, put it back with ungetc(c, stream);
+   - Return c.
+3. free_map and free_json:
+   - Loop through m->size. free the keys, recursively call free_json on values.
+   - free m->data, then free m.
+
+
+STEP 2: PARSING STRINGS
+================================================================================
+WHAT TO DO (int parse_string(char **dst, FILE *stream)):
+1. if getc(stream) != '"', return -1.
+2. Initialize: char *str = malloc(1); str[0] = '\0'; int len = 0;
+3. Infinite loop: while ((c = getc(stream)) != EOF)
+   - If '"': set *dst = str, return 1.
+   - If '\\': 
+       - c = getc(stream).
+       - If EOF: free str, return error_out(EOF).
+       - If NOT '"' and NOT '\\': free str, return error_out(c).
+   - Realloc:
+       - str = realloc(str, len + 2);
+       - str[len] = c;
+       - str[len + 1] = '\0';
+       - len++;
+4. Outside loop (if EOF hit unexpectedly): free str, return error_out(EOF).
+
+!!! PITFALL - REALLOC SIZE !!!
+You need len + 2. One byte for the new character 'c', and one byte for the 
+mandatory '\0' string terminator.
+
+
+STEP 3: PARSING MAPS
+================================================================================
+WHAT TO DO (int parse_map(map **dst, FILE *stream)):
+1. if getc(stream) != '{', return -1.
+2. map *m = calloc(1, sizeof(map)); // calloc naturally zeros out m->data and m->size
+3. Empty map check: if peek is '}', consume it with getc, set *dst = m, return 1.
+4. Infinite loop:
+   - KEY:
+     - if peek() != '"', free m, return error_out(getc).
+     - if parse_string(&key) == -1, free m, return -1.
+   - COLON:
+     - c = getc(stream). If != ':', free key, free m, return error_out(c).
+   - VALUE:
+     - if parse_value(&val) == -1, free key, free m, return -1.
+   - REALLOC:
+     - m->data = realloc(m->data, sizeof(pair) * (m->size + 1));
+     - m->data[m->size].key = key;
+     - m->data[m->size].value = val;
+     - m->size++;
+   - DELIMITER:
+     - c = getc(stream).
+     - if '}', set *dst = m, return 1.
+     - if != ',', free m, return error_out(c).
+
+!!! PITFALL - FREEING THE KEY ON FAIL !!!
+If you successfully parse the key, but the colon or value fails, you must 
+free(key) before exiting, because the key hasn't been attached to the map 
+yet so free_map() won't clean it up for you.
+
+
+STEP 4: THE VALUE ROUTER
+================================================================================
+WHAT TO DO (int parse_value(json *dst, FILE *stream)):
+1. c = peek(stream). If EOF, return error_out(EOF).
+2. If c == '"': dst->type = STRING; return parse_string(&dst->string, stream).
+3. If c == '{': dst->type = MAP; return parse_map(&dst->map, stream).
+4. If c == '-' OR isdigit(c):
+   - dst->type = INTEGER;
+   - if fscanf(stream, "%d", &dst->integer) != 1, return error_out(getc).
+   - Return 1.
+5. Catch-all: return error_out(getc(stream)).
+
+
+STEP 5: ARGO ENTRY POINT
+================================================================================
+WHAT TO DO (int argo(json *dst, FILE *stream)):
+1. if parse_value(dst, stream) == -1, return -1.
+2. Trailing Garbage Check:
+   - int c = getc(stream);
+   - if c != EOF, return error_out(c).
+3. Return 1.
